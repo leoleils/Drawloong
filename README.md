@@ -376,9 +376,19 @@ pyinstaller --name="烛龙绘影" --windowed --icon=logo.icns main.py
 - Python 和依赖版本是否满足要求
 - 是否有足够的磁盘空间
 
-## 📄 许可证
+## 📄 开源许可证
 
-本项目仅供内部使用，未经授权不得对外分发。
+烛龙绘影 (Drawloong) 是一个开源项目，遵循 GNU General Public License v3.0 (GPL-3.0) 许可证发布。
+
+- [LICENSE](LICENSE) - 项目许可证文件
+- [NOTICE](NOTICE) - 第三方组件声明文件
+
+本项目使用了以下第三方开源组件：
+- PyQt5 (GPL-3.0)
+- requests (Apache License 2.0)
+- python-dotenv (BSD 3-Clause)
+
+详细信息请参阅 [NOTICE](NOTICE) 文件。
 
 ## 🙏 致谢
 
