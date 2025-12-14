@@ -1,0 +1,57 @@
+# QT 客户端 .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+ENV/
+env/
+
+# 环境变量
+.env
+
+# 任务数据
+tasks.json
+
+# 上传和输出文件夹
+uploads/
+downloads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# PyInstaller
+build/
+dist/
+*.spec
+!wanx.spec
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
