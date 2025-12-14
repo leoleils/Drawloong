@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QSpinBox, QListWidget, QListWidgetItem, QFileDialog
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QPixmap, QIcon, QDragEnterEvent, QDropEvent
 
 
 class ImageEditWorker(QThread):
@@ -364,6 +364,9 @@ class ImageEditWidget(QWidget):
         self.worker = None
         self.selected_images = []
         self.setup_ui()
+        
+        # 启用拖拽
+        self.setAcceptDrops(True)
     
     def setup_ui(self):
         """设置用户界面"""
@@ -901,3 +904,45 @@ class ImageEditWidget(QWidget):
         from .image_viewer import ImageViewer
         viewer = ImageViewer(image_path, self)
         viewer.exec_()
+    
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        """拖拽进入事件"""
+        if event.mimeData().hasUrls():
+            # 检查是否有图片文件
+            for url in event.mimeData().urls():
+                file_path = url.toLocalFile()
+                if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp', '.gif')):
+                    event.acceptProposedAction()
+                    return
+    
+    def dragMoveEvent(self, event):
+        """拖拽移动事件"""
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+    
+    def dropEvent(self, event: QDropEvent):
+        """拖放事件"""
+        urls = event.mimeData().urls()
+        if not urls:
+            return
+        
+        mode = self.mode_combo.currentData()
+        max_images = 1 if mode == "single" else 3
+        
+        for url in urls:
+            file_path = url.toLocalFile()
+            if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp', '.gif')):
+                if len(self.selected_images) >= max_images:
+                    QMessageBox.warning(
+                        self,
+                        "提示",
+                        f"{'单图编辑' if mode == 'single' else '多图融合'}模式最多选择{max_images}张图片"
+                    )
+                    break
+                
+                if file_path not in self.selected_images:
+                    self.selected_images.append(file_path)
+        
+        # 刷新预览
+        self.refresh_image_preview()
+        event.acceptProposedAction()

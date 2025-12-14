@@ -186,15 +186,15 @@ class MainWindow(QMainWindow):
         
         # 标签页 1：首帧生视频（当前功能）
         self.first_frame_tab = self.create_first_frame_tab()
-        self.tab_widget.addTab(self.first_frame_tab, "🎬 首帧生视频")
+        self.tab_widget.addTab(self.first_frame_tab, "首帧生视频")
         
         # 标签页 2：首尾帧生视频（已实现）
         self.keyframe_tab = KeyframeToVideoWidget(self.api_client, self.project_manager)
-        self.tab_widget.addTab(self.keyframe_tab, "🔄 首尾帧生视频")
+        self.tab_widget.addTab(self.keyframe_tab, "首尾帧生视频")
         
         # 标签页 3：文生图（已实现）
         self.text_to_image_tab = TextToImageWidget(self.api_client, self.project_manager)
-        self.tab_widget.addTab(self.text_to_image_tab, "🎨 文生图")
+        self.tab_widget.addTab(self.text_to_image_tab, "文生图")
         
         # 标签页 4:图像编辑(已实现)
         self.image_edit_tab = ImageEditWidget(self.api_client, self.project_manager)
@@ -225,6 +225,7 @@ class MainWindow(QMainWindow):
         top_layout.setContentsMargins(0, 0, 0, 0)
         
         self.upload_widget = UploadWidget()
+        self.upload_widget.set_project_manager(self.project_manager)
         top_layout.addWidget(self.upload_widget, stretch=1)
         
         self.config_panel = ConfigPanel()
@@ -237,18 +238,20 @@ class MainWindow(QMainWindow):
         bottom_layout = QHBoxLayout(bottom_widget)
         bottom_layout.setContentsMargins(0, 0, 0, 0)
         
-        # 左：视频浏览器
+        # 左：视频浏览器（更大的空间）
         self.video_viewer = VideoViewerWidget()
-        bottom_layout.addWidget(self.video_viewer, stretch=2)
+        bottom_layout.addWidget(self.video_viewer, stretch=3)
         
-        # 右：任务列表
+        # 右：任务列表（更小的空间）
         self.task_list = TaskListWidget(self.task_manager, self.project_manager)
-        bottom_layout.addWidget(self.task_list, stretch=3)
+        self.task_list.setMaximumWidth(450)  # 限制任务列表最大宽度
+        bottom_layout.addWidget(self.task_list, stretch=1)
         
         vsplitter.addWidget(bottom_widget)
         
-        vsplitter.setStretchFactor(0, 2)
-        vsplitter.setStretchFactor(1, 3)
+        # 上部配置区域占更多空间
+        vsplitter.setStretchFactor(0, 3)
+        vsplitter.setStretchFactor(1, 2)
         
         tab_layout.addWidget(vsplitter)
         return tab_widget
@@ -406,6 +409,10 @@ class MainWindow(QMainWindow):
                 input_file=self.current_image_path
             )
             
+            # 解析时长（从"5秒"、"10秒"等格式中提取数字）
+            duration_str = config.get('duration', '5秒')
+            duration = int(''.join(filter(str.isdigit, duration_str))) if duration_str else 5
+            
             # 提交到 API
             result = self.api_client.submit_task(
                 image_path=self.current_image_path,
@@ -413,7 +420,8 @@ class MainWindow(QMainWindow):
                 model=config['model'],
                 resolution=config['resolution'],
                 negative_prompt=config['negative_prompt'],
-                prompt_extend=config['prompt_extend']
+                prompt_extend=config['prompt_extend'],
+                duration=duration
             )
             
             # 更新任务信息

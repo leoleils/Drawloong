@@ -33,7 +33,7 @@ class DashScopeClient:
     
     def submit_task(self, image_path: str, prompt: str, model: str, 
                    resolution: str, negative_prompt: str = "",
-                   prompt_extend: bool = True) -> Dict:
+                   prompt_extend: bool = True, duration: int = 5) -> Dict:
         """
         提交图生视频任务
         
@@ -44,6 +44,7 @@ class DashScopeClient:
             resolution: 分辨率
             negative_prompt: 反向提示词
             prompt_extend: 是否启用智能改写
+            duration: 视频时长（秒）
             
         Returns:
             API 响应数据
@@ -61,7 +62,8 @@ class DashScopeClient:
             },
             "parameters": {
                 "resolution": resolution,
-                "prompt_extend": prompt_extend
+                "prompt_extend": prompt_extend,
+                "duration": duration
             }
         }
         

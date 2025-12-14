@@ -8,9 +8,9 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QLineEdit, QTextEdit, QComboBox, QCheckBox,
-    QPushButton, QGroupBox
+    QPushButton, QGroupBox, QScrollArea
 )
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 
 
 class ConfigPanel(QWidget):
@@ -72,6 +72,24 @@ class ConfigPanel(QWidget):
     def setup_ui(self):
         """设置用户界面"""
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        # 创建滚动区域
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background: transparent;
+            }
+        """)
+        
+        # 滚动内容容器
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(5, 5, 10, 5)
         
         # 创建组框
         group_box = QGroupBox("生成配置")
@@ -84,7 +102,7 @@ class ConfigPanel(QWidget):
         
         self.prompt_edit = QTextEdit()
         self.prompt_edit.setPlaceholderText("描述你想要生成的视频内容...")
-        self.prompt_edit.setMaximumHeight(80)
+        self.prompt_edit.setMinimumHeight(80)
         self.prompt_edit.setText("让画面动起来，添加自然的动态效果")
         group_layout.addWidget(self.prompt_edit)
         
@@ -95,7 +113,7 @@ class ConfigPanel(QWidget):
         
         self.neg_prompt_edit = QTextEdit()
         self.neg_prompt_edit.setPlaceholderText("描述不希望出现的内容...")
-        self.neg_prompt_edit.setMaximumHeight(60)
+        self.neg_prompt_edit.setMinimumHeight(60)
         group_layout.addWidget(self.neg_prompt_edit)
         
         # 模型选择
@@ -104,6 +122,7 @@ class ConfigPanel(QWidget):
         group_layout.addWidget(model_label)
         
         self.model_combo = QComboBox()
+        self.model_combo.setMinimumHeight(30)
         # 按照版本顺序添加模型
         for model_key, model_info in self.MODEL_CONFIG.items():
             self.model_combo.addItem(model_info['name'], model_key)
@@ -121,6 +140,7 @@ class ConfigPanel(QWidget):
         group_layout.addWidget(resolution_label)
         
         self.resolution_combo = QComboBox()
+        self.resolution_combo.setMinimumHeight(30)
         group_layout.addWidget(self.resolution_combo)
         
         # 视频时长选择
@@ -129,15 +149,18 @@ class ConfigPanel(QWidget):
         group_layout.addWidget(duration_label)
         
         self.duration_combo = QComboBox()
+        self.duration_combo.setMinimumHeight(30)
         group_layout.addWidget(self.duration_combo)
         
         # 智能改写选项
         self.prompt_extend_check = QCheckBox("启用提示词智能改写")
         self.prompt_extend_check.setChecked(True)
+        self.prompt_extend_check.setMinimumHeight(30)
         group_layout.addWidget(self.prompt_extend_check)
         
         # 生成按钮
         self.generate_btn = QPushButton("生成视频")
+        self.generate_btn.setMinimumHeight(45)
         self.generate_btn.setStyleSheet("""
             QPushButton {
                 background-color: #28a745;
@@ -158,8 +181,11 @@ class ConfigPanel(QWidget):
         self.generate_btn.setEnabled(False)
         group_layout.addWidget(self.generate_btn)
         
-        layout.addWidget(group_box)
-        layout.addStretch()
+        scroll_layout.addWidget(group_box)
+        scroll_layout.addStretch()
+        
+        scroll_area.setWidget(scroll_content)
+        layout.addWidget(scroll_area)
     
     def connect_signals(self):
         """连接信号槽"""

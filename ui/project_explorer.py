@@ -69,9 +69,12 @@ class ProjectExplorer(QWidget):
         # 设置图标大小以支持缩略图
         self.tree.setIconSize(QSize(48, 48))
         
-        # 树形视图启用内部拖拽（用于未来扩展）
+        # 树形视图启用拖拽
         self.tree.setDragEnabled(True)
         self.tree.setDragDropMode(QTreeWidget.DragOnly)
+        
+        # 连接拖拽开始信号
+        self.tree.startDrag = self.start_drag
         
         layout.addWidget(self.tree)
         
@@ -209,6 +212,40 @@ class ProjectExplorer(QWidget):
             if file_path and os.path.isfile(file_path):
                 return file_path
         return None
+    
+    def start_drag(self, supportedActions):
+        """开始拖拽操作"""
+        item = self.tree.currentItem()
+        if not item:
+            return
+        
+        file_path = item.data(0, Qt.UserRole)
+        if not file_path or not os.path.isfile(file_path):
+            return
+        
+        # 只允许拖拽图片文件
+        if not file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            return
+        
+        # 创建拖拽对象
+        drag = QDrag(self.tree)
+        
+        # 设置MIME数据
+        mime_data = QMimeData()
+        mime_data.setUrls([QUrl.fromLocalFile(file_path)])
+        drag.setMimeData(mime_data)
+        
+        # 设置拖拽时显示的缩略图
+        thumbnail = self.create_thumbnail(file_path)
+        if thumbnail:
+            drag.setPixmap(thumbnail)
+            drag.setHotSpot(thumbnail.rect().center())
+        
+        # 发送拖拽开始信号
+        self.file_drag_started.emit(file_path)
+        
+        # 执行拖拽
+        drag.exec_(Qt.CopyAction)
     
     def dragEnterEvent(self, event):
         """拖拽进入事件"""
