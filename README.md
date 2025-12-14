@@ -1,12 +1,48 @@
 # 烛龙绘影 Drawloong
 
-基于 PyQt5 的多功能 AI 创作桌面客户端，集成了阿里云 DashScope API，支持图片转视频、文生图、图像编辑等多种 AI 创作功能。
-
 <div align="center">
-  <img src="logo.png" alt="Drawloong Logo" width="200">
+  <img src="welcome.png" alt="Drawloong Welcome Screen" width="800">
 </div>
 
+## 📄 开源许可证
+
+<div align="center">
+
+![GPLv3](https://www.gnu.org/graphics/gplv3-127x51.png)
+
+**烛龙绘影 (Drawloong)** 采用 **GNU General Public License v3.0** 开源协议
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+</div>
+
+### 📋 许可证文件
+
+- 🔓 **[LICENSE](LICENSE)** - GNU General Public License v3.0
+- 📋 **[NOTICE](NOTICE)** - 第三方开源组件声明
+
+### 🧩 第三方组件
+
+本项目使用了以下优秀的开源组件：
+
+| 组件 | 许可证 | 用途 |
+|------|--------|------|
+| [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) | GPL-3.0 | GUI框架 |
+| [requests](https://requests.readthedocs.io/) | Apache-2.0 | 网络请求 |
+| [python-dotenv](https://github.com/theskumar/python-dotenv) | BSD-3-Clause | 环境变量管理 |
+
+### ℹ️ 使用说明
+
+1. 本项目完全开源，您可以自由使用、修改和分发
+2. 任何基于本项目的衍生作品也必须采用相同的开源许可证
+3. 详细信息请查阅 [LICENSE](LICENSE) 文件
+4. 第三方组件的许可证详情请查阅 [NOTICE](NOTICE) 文件
+
+---
+
 ## 🌟 项目简介
+
+基于 PyQt5 的多功能 AI 创作桌面客户端，集成了阿里云 DashScope API，支持图片转视频、文生图、图像编辑等多种 AI 创作功能。
 
 烛龙绘影 (Drawloong) 是一款功能强大的 AI 创作工具，采用现代化的标签页架构设计，支持多种 AI 生成功能。它提供了类似 VSCode 的工程管理系统，让用户能够轻松管理和组织多个创作项目。
 
@@ -375,40 +411,6 @@ pyinstaller --name="烛龙绘影" --windowed --icon=logo.icns main.py
 - 网络连接是否正常
 - Python 和依赖版本是否满足要求
 - 是否有足够的磁盘空间
-
-## 📄 开源许可证
-
-<div align="center">
-
-![GPLv3](https://www.gnu.org/graphics/gplv3-127x51.png)
-
-**烛龙绘影 (Drawloong)** 采用 **GNU General Public License v3.0** 开源协议
-
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-
-</div>
-
-### 📋 许可证文件
-
-- 🔓 **[LICENSE](LICENSE)** - GNU General Public License v3.0
-- 📋 **[NOTICE](NOTICE)** - 第三方开源组件声明
-
-### 🧩 第三方组件
-
-本项目使用了以下优秀的开源组件：
-
-| 组件 | 许可证 | 用途 |
-|------|--------|------|
-| [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) | GPL-3.0 | GUI框架 |
-| [requests](https://requests.readthedocs.io/) | Apache-2.0 | 网络请求 |
-| [python-dotenv](https://github.com/theskumar/python-dotenv) | BSD-3-Clause | 环境变量管理 |
-
-### ℹ️ 使用说明
-
-1. 本项目完全开源，您可以自由使用、修改和分发
-2. 任何基于本项目的衍生作品也必须采用相同的开源许可证
-3. 详细信息请查阅 [LICENSE](LICENSE) 文件
-4. 第三方组件的许可证详情请查阅 [NOTICE](NOTICE) 文件
 
 ## 🙏 致谢
 
