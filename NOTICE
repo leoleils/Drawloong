@@ -1,0 +1,47 @@
+烛龙绘影 Drawloong
+Copyright (c) 2025
+
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
+See the LICENSE file for details.
+
+THIRD-PARTY SOFTWARE NOTICES
+
+This project uses the following third-party open source software:
+
+1. PyQt5
+   - Version: 5.15.0 or later
+   - License: GNU General Public License v3.0 (GPL-3.0)
+   - Website: https://www.riverbankcomputing.com/software/pyqt/
+   - Copyright (c) Riverbank Computing Limited
+
+2. requests
+   - Version: 2.25.0 or later
+   - License: Apache License 2.0
+   - Website: https://requests.readthedocs.io/
+   - Copyright (c) 2015 Kenneth Reitz
+
+3. python-dotenv
+   - Version: 0.19.0 or later
+   - License: BSD 3-Clause License
+   - Website: https://github.com/theskumar/python-dotenv
+   - Copyright (c) 2015 Saurabh Kumar
+
+The following dependencies are also included as part of the above packages:
+
+4. Qt Framework (used by PyQt5)
+   - License: GNU General Public License v3.0 (GPL-3.0)
+   - Website: https://www.qt.io/
+   - Copyright (c) The Qt Company Ltd.
+
+5. SIP (used by PyQt5)
+   - License: GNU General Public License v3.0 (GPL-3.0)
+   - Website: https://riverbankcomputing.com/software/sip/
+   - Copyright (c) Riverbank Computing Limited
+
+DISCLAIMER
+
+This project is not officially endorsed by or affiliated with Alibaba Group or DashScope.
+The "烛龙绘影" name and logo are trademarks of the project contributors.
+
+The third-party libraries mentioned above are distributed under their respective licenses.
+Please refer to their individual license files for detailed terms and conditions.
