@@ -1,7 +1,7 @@
 # 烛龙绘影 Drawloong v1.3.3 Release
 
 ## 下载
-- [Drawloong.dmg](https://path/to/Drawloong.dmg) (179 MB)
+- [Drawloong.dmg](https://drawloong.oss-cn-shenzhen.aliyuncs.com/v1.3.3/Drawloong.dmg) (179 MB)
 - SHA256: f63897444720ccb525c54207f71113b1e16283582c37a8697cdbea6bd24a99dd
 
 ## 支持的平台
