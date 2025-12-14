@@ -9,8 +9,17 @@ import sys
 import os
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from ui.main_window import MainWindow
 from ui.splash_screen import SplashScreen
+
+
+def get_resource_path(relative_path):
+    """获取资源文件的绝对路径（支持打包后的路径）"""
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller 打包后的路径
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
 
 def main():
@@ -22,6 +31,11 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Drawloong")
     app.setOrganizationName("烛龙绘影")
+    
+    # 设置应用图标
+    icon_path = get_resource_path('logo.png')
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
     
     # 设置应用样式
     app.setStyle('Fusion')

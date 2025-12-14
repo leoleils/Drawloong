@@ -74,8 +74,8 @@ app = BUNDLE(
         'CFBundleName': 'Drawloong',
         'CFBundleDisplayName': '烛龙绘影 Drawloong',
         'CFBundleGetInfoString': "烛龙绘影 - AI图像视频生成应用",
-        'CFBundleVersion': "1.0.0",
-        'CFBundleShortVersionString': "1.0.0",
+        'CFBundleVersion': "1.12.0",
+        'CFBundleShortVersionString': "1.12.0",
         'NSHighResolutionCapable': 'True',
     },
 )
