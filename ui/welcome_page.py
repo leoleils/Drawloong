@@ -23,17 +23,14 @@ class WelcomePage(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        # 设置固定尺寸 - 更小的窗口
-        self.setFixedWidth(350)
-        self.setFixedHeight(400)
         self.setup_ui()
     
     def setup_ui(self):
         """设置界面"""
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignCenter)
-        layout.setContentsMargins(20, 15, 20, 15)
-        layout.setSpacing(12)
+        layout.setContentsMargins(40, 40, 40, 40)
+        layout.setSpacing(20)
         
         # 设置暗黑背景
         self.setStyleSheet("""
@@ -48,29 +45,30 @@ class WelcomePage(QWidget):
         if os.path.exists(logo_path):
             logo_label = QLabel()
             pixmap = QPixmap(logo_path)
-            # Logo尺寸
-            scaled_pixmap = pixmap.scaled(280, 280, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            # Logo尺寸 - 限制最大尺寸
+            scaled_pixmap = pixmap.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             logo_label.setPixmap(scaled_pixmap)
             logo_label.setAlignment(Qt.AlignCenter)
             layout.addWidget(logo_label)
         
         # 快捷操作 - 左右布局的按钮
         actions_widget = QWidget()
-        actions_widget.setFixedWidth(270)  # 进一步减小容器宽度
         actions_layout = QHBoxLayout(actions_widget)
-        actions_layout.setSpacing(15)  # 增加间距
+        actions_layout.setSpacing(20)
+        actions_layout.setContentsMargins(0, 0, 0, 0)
         
         # 新建工程按钮 - 波尔红、左侧
         new_btn = QPushButton("新建工程")
-        new_btn.setFixedSize(130, 40)  # 进一步减小按钮尺寸
+        new_btn.setMinimumSize(150, 50)
+        new_btn.setMaximumSize(200, 60)
         new_btn.setStyleSheet("""
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #dc143c, stop:1 #a00000);
                 color: white;
                 border: none;
-                border-radius: 5px;
-                font-size: 13px;
+                border-radius: 8px;
+                font-size: 15px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -87,15 +85,16 @@ class WelcomePage(QWidget):
         
         # 打开工程按钮 - 金属色、右侧
         open_btn = QPushButton("打开工程")
-        open_btn.setFixedSize(130, 40)  # 进一步减小按钮尺寸
+        open_btn.setMinimumSize(150, 50)
+        open_btn.setMaximumSize(200, 60)
         open_btn.setStyleSheet("""
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #c0c0c0, stop:1 #808080);
                 color: #2c3e50;
                 border: 1px solid #909090;
-                border-radius: 5px;
-                font-size: 13px;
+                border-radius: 8px;
+                font-size: 15px;
                 font-weight: bold;
             }
             QPushButton:hover {
