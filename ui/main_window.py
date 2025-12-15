@@ -49,6 +49,9 @@ class MainWindow(QMainWindow):
         # 当前选择的图片路径
         self.current_image_path = None
         
+        # 当前正在生成的任务ID
+        self.current_generating_task_id = None
+        
         # 设置窗口
         self.setup_ui()
         
@@ -409,8 +412,9 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"复制图片失败: {e}")
         
-        # 禁用生成按钮
+        # 禁用生成按钮并更新文本
         self.config_panel.generate_btn.setEnabled(False)
+        self.config_panel.generate_btn.setText("生成中...")
         self.status_bar.showMessage("正在提交任务...")
         
         try:
@@ -446,28 +450,53 @@ class MainWindow(QMainWindow):
                 async_task_id=async_task_id
             )
             
+            # 保存当前任务ID，用于完成后加载视频
+            self.current_generating_task_id = task.id
+            
             # 刷新任务列表并开始监控
             self.task_list.refresh_tasks()
             self.task_list.start_monitoring_task(task.id)
             
-            self.status_bar.showMessage("任务已提交，正在处理中...")
-            QMessageBox.information(self, "成功", "视频生成任务已提交！")
+            self.status_bar.showMessage("任务已提交，正在生成视频...")
             
         except Exception as e:
             QMessageBox.critical(self, "错误", f"任务提交失败：{str(e)}")
             self.status_bar.showMessage("任务提交失败")
-        finally:
-            # 重新启用生成按钮
+            # 恢复按钮
             self.config_panel.generate_btn.setEnabled(True)
+            self.config_panel.generate_btn.setText("生成视频")
     
     def on_task_updated(self, task_id):
         """任务更新回调"""
         task = self.task_manager.get_task(task_id)
         if task and task.is_completed():
-            if task.is_success():
-                self.status_bar.showMessage(f"任务 {task_id[:8]} 已完成")
+            # 检查是否是当前正在生成的任务
+            if hasattr(self, 'current_generating_task_id') and task_id == self.current_generating_task_id:
+                # 恢复生成按钮
+                self.config_panel.generate_btn.setEnabled(True)
+                self.config_panel.generate_btn.setText("生成视频")
+                
+                if task.is_success():
+                    self.status_bar.showMessage(f"视频生成成功！")
+                    
+                    # 自动加载视频到播放器
+                    if task.output_file and os.path.exists(task.output_file):
+                        self.video_viewer.load_video(task.output_file)
+                        QMessageBox.information(self, "成功", "视频生成完成！已自动加载到播放器。")
+                    else:
+                        QMessageBox.information(self, "成功", "视频生成完成！")
+                else:
+                    self.status_bar.showMessage(f"视频生成失败")
+                    QMessageBox.warning(self, "失败", "视频生成失败，请查看任务列表了解详情。")
+                
+                # 清除当前任务ID
+                self.current_generating_task_id = None
             else:
-                self.status_bar.showMessage(f"任务 {task_id[:8]} 失败")
+                # 其他任务完成
+                if task.is_success():
+                    self.status_bar.showMessage(f"任务 {task_id[:8]} 已完成")
+                else:
+                    self.status_bar.showMessage(f"任务 {task_id[:8]} 失败")
     
     def open_settings(self):
         """打开设置对话框"""
