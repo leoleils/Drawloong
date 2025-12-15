@@ -445,15 +445,21 @@ class MainWindow(QMainWindow):
             duration = int(''.join(filter(str.isdigit, duration_str))) if duration_str else 5
             
             # 提交到 API
-            result = self.api_client.submit_task(
-                image_path=self.current_image_path,
-                prompt=config['prompt'],
-                model=config['model'],
-                resolution=config['resolution'],
-                negative_prompt=config['negative_prompt'],
-                prompt_extend=config['prompt_extend'],
-                duration=duration
-            )
+            submit_params = {
+                'image_path': self.current_image_path,
+                'prompt': config['prompt'],
+                'model': config['model'],
+                'resolution': config['resolution'],
+                'negative_prompt': config['negative_prompt'],
+                'prompt_extend': config['prompt_extend'],
+                'duration': duration
+            }
+            
+            # 如果配置中有shot_type参数（2.6模型），添加到请求中
+            if 'shot_type' in config:
+                submit_params['shot_type'] = config['shot_type']
+            
+            result = self.api_client.submit_task(**submit_params)
             
             # 更新任务信息
             async_task_id = result['output']['task_id']

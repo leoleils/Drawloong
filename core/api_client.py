@@ -33,7 +33,8 @@ class DashScopeClient:
     
     def submit_task(self, image_path: str, prompt: str, model: str, 
                    resolution: str, negative_prompt: str = "",
-                   prompt_extend: bool = True, duration: int = 5) -> Dict:
+                   prompt_extend: bool = True, duration: int = 5,
+                   shot_type: str = None) -> Dict:
         """
         提交图生视频任务
         
@@ -45,6 +46,7 @@ class DashScopeClient:
             negative_prompt: 反向提示词
             prompt_extend: 是否启用智能改写
             duration: 视频时长（秒）
+            shot_type: 镜头类型（仅2.6模型支持，multi/single）
             
         Returns:
             API 响应数据
@@ -70,6 +72,10 @@ class DashScopeClient:
         # 添加反向提示词
         if negative_prompt:
             payload["input"]["negative_prompt"] = negative_prompt
+        
+        # 添加镜头类型（仅2.6模型支持，且仅在启用提示词扩展时生效）
+        if shot_type and prompt_extend:
+            payload["parameters"]["shot_type"] = shot_type
         
         # 发送请求
         response = requests.post(

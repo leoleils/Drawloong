@@ -21,12 +21,22 @@ class ConfigPanel(QWidget):
     
     # 模型配置映射（分辨率、时长、描述）
     MODEL_CONFIG = {
+        'wan2.6-i2v': {
+            'name': '🌟 万相2.6（最新）',
+            'resolutions': ['720P', '1080P'],
+            'durations': ['5秒', '10秒', '15秒'],
+            'fps': 30,
+            'audio': False,
+            'shot_type': True,  # 支持镜头类型选择
+            'description': '最新模型，支持5/10/15秒时长，支持智能多镜头'
+        },
         'wan2.5-i2v-preview': {
             'name': '万相2.5 Preview（有声视频）',
             'resolutions': ['480P', '720P', '1080P'],
             'durations': ['5秒', '10秒'],
             'fps': 24,
             'audio': True,
+            'shot_type': False,
             'description': '支持自动配音或自定义音频'
         },
         'wan2.2-i2v-flash': {
@@ -35,6 +45,7 @@ class ConfigPanel(QWidget):
             'durations': ['5秒'],
             'fps': 30,
             'audio': False,
+            'shot_type': False,
             'description': '较2.1模型速度提升50%'
         },
         'wan2.2-i2v-plus': {
@@ -43,6 +54,7 @@ class ConfigPanel(QWidget):
             'durations': ['5秒'],
             'fps': 30,
             'audio': False,
+            'shot_type': False,
             'description': '较2.1模型稳定性与成功率全面提升'
         },
         'wanx2.1-i2v-plus': {
@@ -51,6 +63,7 @@ class ConfigPanel(QWidget):
             'durations': ['5秒'],
             'fps': 30,
             'audio': False,
+            'shot_type': False,
             'description': '稳定版本'
         },
         'wanx2.1-i2v-turbo': {
@@ -59,6 +72,7 @@ class ConfigPanel(QWidget):
             'durations': ['3秒', '4秒', '5秒'],
             'fps': 30,
             'audio': False,
+            'shot_type': False,
             'description': '快速生成'
         }
     }
@@ -158,6 +172,21 @@ class ConfigPanel(QWidget):
         self.prompt_extend_check.setMinimumHeight(30)
         group_layout.addWidget(self.prompt_extend_check)
         
+        # 镜头类型选择（仅2.6模型显示）
+        self.shot_type_label = QLabel("镜头类型:")
+        self.shot_type_label.setStyleSheet("font-weight: bold;")
+        group_layout.addWidget(self.shot_type_label)
+        
+        self.shot_type_combo = QComboBox()
+        self.shot_type_combo.setMinimumHeight(30)
+        self.shot_type_combo.addItem("智能多镜头（推荐）", "multi")
+        self.shot_type_combo.addItem("单镜头生成", "single")
+        group_layout.addWidget(self.shot_type_combo)
+        
+        # 默认隐藏镜头类型选择
+        self.shot_type_label.hide()
+        self.shot_type_combo.hide()
+        
         # 生成按钮
         self.generate_btn = QPushButton("生成视频")
         self.generate_btn.setMinimumHeight(45)
@@ -230,11 +259,20 @@ class ConfigPanel(QWidget):
         # 尝试保持之前的选择
         if current_duration in available_durations:
             self.duration_combo.setCurrentText(current_duration)
+        
+        # 显示/隐藏镜头类型选择（仅2.6模型支持）
+        if model_config.get('shot_type', False):
+            self.shot_type_label.show()
+            self.shot_type_combo.show()
+        else:
+            self.shot_type_label.hide()
+            self.shot_type_combo.hide()
     
     def on_generate_clicked(self):
         """生成按钮点击事件"""
         # 获取当前模型 key
         model_key = self.model_combo.currentData()
+        model_config = self.MODEL_CONFIG.get(model_key, {})
         
         # 收集配置
         config = {
@@ -245,6 +283,10 @@ class ConfigPanel(QWidget):
             'duration': self.duration_combo.currentText(),
             'prompt_extend': self.prompt_extend_check.isChecked()
         }
+        
+        # 如果是2.6模型，添加镜头类型参数
+        if model_config.get('shot_type', False):
+            config['shot_type'] = self.shot_type_combo.currentData()
         
         # 验证提示词
         if not config['prompt']:
