@@ -24,6 +24,9 @@ def get_resource_path(relative_path):
 
 def main():
     """应用程序主入口"""
+    # 设置环境变量，避免 macOS 输入法相关的崩溃
+    os.environ['QT_MAC_WANTS_LAYER'] = '1'
+    
     # 启用高DPI缩放
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
