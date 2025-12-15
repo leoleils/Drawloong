@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.12.0-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.13.0-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
@@ -249,6 +249,14 @@ pyinstaller wanx.spec
 ---
 
 ## 📈 更新日志
+
+### v1.13.0 (2025-12-15)
+- ✨ 首尾帧页面图片预览区域增大，显示更清晰
+- ✨ 视频集点击播放功能：在首尾帧页面点击视频时在该页面播放
+- 🎨 资源管理器界面优化：隐藏分割器手柄，界面更简洁
+- 🎯 图集和视频集文件过滤：图集只显示图片，视频集只显示视频
+- 🖼️ 视频预览图功能：视频集显示视频第一帧作为预览图
+- 🐛 修复Task对象属性错误
 
 ### v1.12.0 (2025-12-14)
 - ✨ 新增图集拖拽到各功能页面
