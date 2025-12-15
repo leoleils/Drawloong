@@ -247,40 +247,21 @@ class KeyframeToVideoWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        # 主分割器 - 上下分割
-        main_splitter = QSplitter(Qt.Vertical)
+        # 主水平分割器 - 左右布局
+        main_splitter = QSplitter(Qt.Horizontal)
         
-        # 上部区域 - 左右分割
-        top_widget = QWidget()
-        top_layout = QHBoxLayout(top_widget)
-        top_layout.setContentsMargins(0, 0, 0, 0)
+        # 左侧：关键帧预览和历史记录
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
         
-        top_splitter = QSplitter(Qt.Horizontal)
+        left_splitter = QSplitter(Qt.Vertical)
         
-        # 左上角:提示词和配置面板
-        config_widget = self.create_config_panel()
-        config_widget.setMinimumWidth(350)  # 设置最小宽度
-        top_splitter.addWidget(config_widget)
-        
-        # 右上角:关键帧预览（完整显示图片）
+        # 左上：关键帧预览（占大部分）
         preview_widget = self.create_preview_panel()
-        preview_widget.setMinimumWidth(400)  # 设置最小宽度
-        top_splitter.addWidget(preview_widget)
+        left_splitter.addWidget(preview_widget)
         
-        top_splitter.setStretchFactor(0, 1)  # 配置面板占1份
-        top_splitter.setStretchFactor(1, 1)  # 预览面板占1份，平分空间
-        
-        top_layout.addWidget(top_splitter)
-        main_splitter.addWidget(top_widget)
-        
-        # 下部区域 - 左右分割
-        bottom_widget = QWidget()
-        bottom_layout = QHBoxLayout(bottom_widget)
-        bottom_layout.setContentsMargins(0, 0, 0, 0)
-        
-        bottom_splitter = QSplitter(Qt.Horizontal)
-        
-        # 左下角:历史记录和任务列表
+        # 左下：历史记录（类似任务列表）
         left_bottom_widget = QWidget()
         left_bottom_layout = QVBoxLayout(left_bottom_widget)
         left_bottom_layout.setContentsMargins(5, 5, 5, 5)
@@ -344,25 +325,40 @@ class KeyframeToVideoWidget(QWidget):
         metadata_layout.addWidget(scroll_area)
         
         left_bottom_layout.addWidget(metadata_group)
+        left_splitter.addWidget(left_bottom_widget)
         
-        left_bottom_widget.setMinimumWidth(300)
-        bottom_splitter.addWidget(left_bottom_widget)
+        # 左侧上下比例：关键帧占2份，历史记录占1份
+        left_splitter.setStretchFactor(0, 2)
+        left_splitter.setStretchFactor(1, 1)
         
-        # 右下角:视频预览（更大的显示区域）
+        left_layout.addWidget(left_splitter)
+        main_splitter.addWidget(left_widget)
+        
+        # 右侧：配置面板和视频预览
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        
+        right_splitter = QSplitter(Qt.Vertical)
+        
+        # 右上：配置面板
+        config_widget = self.create_config_panel()
+        right_splitter.addWidget(config_widget)
+        
+        # 右下：视频预览
         self.video_viewer = VideoViewerWidget()
-        self.video_viewer.setMinimumWidth(500)  # 设置最小宽度
-        self.video_viewer.setMinimumHeight(280)  # 降低最小高度，避免挡住上部
-        bottom_splitter.addWidget(self.video_viewer)
+        right_splitter.addWidget(self.video_viewer)
         
-        bottom_splitter.setStretchFactor(0, 1)  # 左侧任务列表占1份
-        bottom_splitter.setStretchFactor(1, 3)  # 右侧视频预览占3份
+        # 右侧上下各占一半
+        right_splitter.setStretchFactor(0, 1)
+        right_splitter.setStretchFactor(1, 1)
         
-        bottom_layout.addWidget(bottom_splitter)
-        main_splitter.addWidget(bottom_widget)
+        right_layout.addWidget(right_splitter)
+        main_splitter.addWidget(right_widget)
         
-        # 设置分割比例
-        main_splitter.setStretchFactor(0, 1)  # 上部占1份
-        main_splitter.setStretchFactor(1, 1)  # 下部占1份
+        # 左右比例：左侧占2份，右侧占1份
+        main_splitter.setStretchFactor(0, 2)
+        main_splitter.setStretchFactor(1, 1)
         
         layout.addWidget(main_splitter)
     
