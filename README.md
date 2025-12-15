@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.13.0-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.14.0-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
@@ -249,6 +249,13 @@ pyinstaller wanx.spec
 ---
 
 ## 📈 更新日志
+
+### v1.14.0 (2025-12-15)
+- 🌟 新增万相2.6模型支持（最新模型）
+- ⏱️ 支持5秒、10秒、15秒三种时长选择
+- 🎬 新增智能镜头类型选择：多镜头/单镜头
+- 📺 分辨率支持720P和1080P（2.6模型不支持480P）
+- 📚 添加万相2.6快速使用指南
 
 ### v1.13.0 (2025-12-15)
 - ✨ 首尾帧页面图片预览区域增大，显示更清晰
