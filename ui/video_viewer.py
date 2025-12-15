@@ -8,7 +8,7 @@
 import os
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QGroupBox, QMessageBox
+    QPushButton, QGroupBox, QMessageBox, QSlider
 )
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
@@ -58,6 +58,49 @@ class VideoViewerWidget(QWidget):
         # 默认隐藏视频控件，显示空状态
         self.video_widget.hide()
         self.empty_label.show()
+        
+        # 进度条和时间显示
+        progress_layout = QHBoxLayout()
+        
+        # 当前时间
+        self.current_time_label = QLabel("00:00")
+        self.current_time_label.setStyleSheet("color: #666; font-size: 12px; min-width: 45px;")
+        progress_layout.addWidget(self.current_time_label)
+        
+        # 进度条
+        self.progress_slider = QSlider(Qt.Horizontal)
+        self.progress_slider.setRange(0, 0)
+        self.progress_slider.sliderMoved.connect(self.set_position)
+        self.progress_slider.setStyleSheet("""
+            QSlider::groove:horizontal {
+                border: 1px solid #bbb;
+                background: #ddd;
+                height: 6px;
+                border-radius: 3px;
+            }
+            QSlider::handle:horizontal {
+                background: #007bff;
+                border: 1px solid #0056b3;
+                width: 14px;
+                margin: -5px 0;
+                border-radius: 7px;
+            }
+            QSlider::handle:horizontal:hover {
+                background: #0056b3;
+            }
+            QSlider::sub-page:horizontal {
+                background: #007bff;
+                border-radius: 3px;
+            }
+        """)
+        progress_layout.addWidget(self.progress_slider)
+        
+        # 总时长
+        self.duration_label = QLabel("00:00")
+        self.duration_label.setStyleSheet("color: #666; font-size: 12px; min-width: 45px;")
+        progress_layout.addWidget(self.duration_label)
+        
+        group_layout.addLayout(progress_layout)
         
         # 控制栏
         control_layout = QHBoxLayout()
@@ -121,6 +164,8 @@ class VideoViewerWidget(QWidget):
         self.media_player.setVideoOutput(self.video_widget)
         self.media_player.stateChanged.connect(self.on_state_changed)
         self.media_player.error.connect(self.on_error)
+        self.media_player.durationChanged.connect(self.on_duration_changed)
+        self.media_player.positionChanged.connect(self.on_position_changed)
     
     def load_video(self, video_path):
         """加载视频文件"""
@@ -175,6 +220,27 @@ class VideoViewerWidget(QWidget):
         error_string = self.media_player.errorString()
         QMessageBox.critical(self, "播放错误", f"无法播放视频:\n{error_string}")
     
+    def on_duration_changed(self, duration):
+        """视频时长改变"""
+        self.progress_slider.setRange(0, duration)
+        self.duration_label.setText(self.format_time(duration))
+    
+    def on_position_changed(self, position):
+        """播放位置改变"""
+        self.progress_slider.setValue(position)
+        self.current_time_label.setText(self.format_time(position))
+    
+    def set_position(self, position):
+        """设置播放位置"""
+        self.media_player.setPosition(position)
+    
+    def format_time(self, ms):
+        """格式化时间（毫秒转为 MM:SS）"""
+        seconds = ms // 1000
+        minutes = seconds // 60
+        seconds = seconds % 60
+        return f"{minutes:02d}:{seconds:02d}"
+    
     def clear(self):
         """清空视频"""
         self.media_player.stop()
@@ -188,3 +254,9 @@ class VideoViewerWidget(QWidget):
         self.video_info_label.setText("未加载视频")
         self.play_pause_btn.setEnabled(False)
         self.stop_btn.setEnabled(False)
+        
+        # 重置进度条和时间
+        self.progress_slider.setValue(0)
+        self.progress_slider.setRange(0, 0)
+        self.current_time_label.setText("00:00")
+        self.duration_label.setText("00:00")
