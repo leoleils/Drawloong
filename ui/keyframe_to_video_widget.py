@@ -230,17 +230,15 @@ class KeyframeVideoWorker(QThread):
 class KeyframeToVideoWidget(QWidget):
     """首尾帧生成视频组件"""
     
-    def __init__(self, api_client, project_manager, parent=None):
+    def __init__(self, api_client, project_manager, task_manager, parent=None):
         super().__init__(parent)
         self.api_client = api_client
         self.project_manager = project_manager
+        self.task_manager = task_manager
         self.worker = None
         self.first_frame_path = None
         self.last_frame_path = None
-        self.history_videos = []  # 历史视频列表
-        self.history_file = None  # 历史记录文件路径
         self.setup_ui()
-        self.load_history()  # 加载历史记录
     
     def setup_ui(self):
         """设置用户界面"""
@@ -261,71 +259,10 @@ class KeyframeToVideoWidget(QWidget):
         preview_widget = self.create_preview_panel()
         left_splitter.addWidget(preview_widget)
         
-        # 左下：历史记录（类似任务列表）
-        left_bottom_widget = QWidget()
-        left_bottom_layout = QVBoxLayout(left_bottom_widget)
-        left_bottom_layout.setContentsMargins(5, 5, 5, 5)
-        
-        # 历史记录面板
-        history_group = QGroupBox("历史视频")
-        history_layout = QVBoxLayout(history_group)
-        
-        # 历史列表
-        from PyQt5.QtWidgets import QListWidget, QListWidgetItem
-        self.history_list = QListWidget()
-        self.history_list.setMinimumHeight(150)
-        self.history_list.itemClicked.connect(self.on_history_item_clicked)
-        self.history_list.setStyleSheet("""
-            QListWidget {
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                background: #f9f9f9;
-            }
-            QListWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #eee;
-            }
-            QListWidget::item:hover {
-                background: #e7f3ff;
-            }
-            QListWidget::item:selected {
-                background: #007bff;
-                color: white;
-            }
-        """)
-        history_layout.addWidget(self.history_list)
-        left_bottom_layout.addWidget(history_group)
-        
-        # 元数据信息面板
-        metadata_group = QGroupBox("视频生成信息")
-        metadata_layout = QVBoxLayout(metadata_group)
-        
-        # 创建可滚动的内容区域
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setMinimumHeight(150)
-        
-        scroll_content = QWidget()
-        self.metadata_layout = QVBoxLayout(scroll_content)
-        self.metadata_layout.setContentsMargins(5, 5, 5, 5)
-        
-        # 默认提示
-        self.metadata_placeholder = QLabel("📊 生成视频或点击历史记录，查看生成参数")
-        self.metadata_placeholder.setAlignment(Qt.AlignCenter)
-        self.metadata_placeholder.setStyleSheet("""
-            QLabel {
-                color: #999;
-                font-size: 12px;
-                padding: 20px;
-            }
-        """)
-        self.metadata_layout.addWidget(self.metadata_placeholder)
-        
-        scroll_area.setWidget(scroll_content)
-        metadata_layout.addWidget(scroll_area)
-        
-        left_bottom_layout.addWidget(metadata_group)
-        left_splitter.addWidget(left_bottom_widget)
+        # 左下：任务列表
+        from .task_list import TaskListWidget
+        self.task_list = TaskListWidget(self.task_manager, self.project_manager)
+        left_splitter.addWidget(self.task_list)
         
         # 左侧上下比例：关键帧占2份，历史记录占1份
         left_splitter.setStretchFactor(0, 2)
@@ -527,7 +464,7 @@ class KeyframeToVideoWidget(QWidget):
         # 使用支持拖拽的Label - 增大显示区域
         self.first_frame_preview = DragDropLabel("🖼️ 未选择\n(支持拖拽图片)")
         self.first_frame_preview.setAlignment(Qt.AlignCenter)
-        self.first_frame_preview.setMinimumHeight(150)  # 设置合理的最小高度
+        self.first_frame_preview.setMinimumHeight(220)  # 增加最小高度
         self.first_frame_preview.setMinimumWidth(300)  # 设置最小宽度
         self.first_frame_preview.setScaledContents(False)  # 不拉伸内容
         self.first_frame_preview.setStyleSheet("""
@@ -587,7 +524,7 @@ class KeyframeToVideoWidget(QWidget):
         
         self.last_frame_preview = DragDropLabel("🖼️ 未选择\n(支持拖拽图片)")
         self.last_frame_preview.setAlignment(Qt.AlignCenter)
-        self.last_frame_preview.setMinimumHeight(150)  # 设置合理的最小高度
+        self.last_frame_preview.setMinimumHeight(220)  # 增加最小高度
         self.last_frame_preview.setMinimumWidth(300)  # 设置最小宽度
         self.last_frame_preview.setScaledContents(False)  # 不拉伸内容
         self.last_frame_preview.setStyleSheet("""
@@ -810,24 +747,13 @@ class KeyframeToVideoWidget(QWidget):
         # 加载视频到视频查看器
         self.video_viewer.load_video(video_path)
         
-        # 显示元数据信息
-        self.display_metadata(video_info)
-        
-        # 添加到历史记录
-        import time
-        video_history = {
-            'path': video_path,
-            'timestamp': time.time(),
-            'metadata': video_info
-        }
-        self.history_videos.insert(0, video_history)  # 插入到最前面
-        self.save_history()
-        self.refresh_history_list()
-        
         # 刷新资源管理器
         main_window = self.window()
         if hasattr(main_window, 'project_explorer'):
             main_window.project_explorer.refresh()
+        
+        # 刷新任务列表
+        self.task_list.refresh_tasks()
         
         QMessageBox.information(
             self,

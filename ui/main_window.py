@@ -120,6 +120,18 @@ class MainWindow(QMainWindow):
         
         # 主分割器 - 水平
         main_splitter = QSplitter(Qt.Horizontal)
+        main_splitter.setHandleWidth(0)  # 设置手柄宽度为0
+        main_splitter.setStyleSheet("""
+            QSplitter::handle {
+                background: transparent;
+                width: 0px;
+                margin: 0px;
+                padding: 0px;
+            }
+            QSplitter::handle:horizontal {
+                width: 0px;
+            }
+        """)
         
         # 左侧：工程资源管理器
         self.project_explorer = ProjectExplorer()
@@ -192,7 +204,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.first_frame_tab, "首帧生视频")
         
         # 标签页 2：首尾帧生视频（已实现）
-        self.keyframe_tab = KeyframeToVideoWidget(self.api_client, self.project_manager)
+        self.keyframe_tab = KeyframeToVideoWidget(self.api_client, self.project_manager, self.task_manager)
         self.tab_widget.addTab(self.keyframe_tab, "首尾帧生视频")
         
         # 标签页 3：文生图（已实现）
@@ -480,8 +492,8 @@ class MainWindow(QMainWindow):
                     self.status_bar.showMessage(f"视频生成成功！")
                     
                     # 自动加载视频到播放器
-                    if task.output_file and os.path.exists(task.output_file):
-                        self.video_viewer.load_video(task.output_file)
+                    if task.output_path and os.path.exists(task.output_path):
+                        self.video_viewer.load_video(task.output_path)
                         QMessageBox.information(self, "成功", "视频生成完成！已自动加载到播放器。")
                     else:
                         QMessageBox.information(self, "成功", "视频生成完成！")
@@ -699,7 +711,17 @@ class MainWindow(QMainWindow):
                 project = self.project_manager.get_current_project()
                 # 如果是 outputs 文件夹中的视频，在视频浏览器中播放
                 if file_path.startswith(project.outputs_folder):
-                    self.video_viewer.load_video(file_path)
+                    # 获取当前激活的标签页
+                    current_tab = self.tab_widget.currentWidget()
+                    
+                    # 根据当前标签页选择对应的视频浏览器
+                    if current_tab == self.keyframe_tab:
+                        # 首尾帧页面 - 使用该页面的视频浏览器
+                        self.keyframe_tab.video_viewer.load_video(file_path)
+                    else:
+                        # 其他页面 - 使用首帧生视频页面的视频浏览器
+                        self.video_viewer.load_video(file_path)
+                    
                     self.status_bar.showMessage(f"正在播放: {os.path.basename(file_path)}")
                 else:
                     # 其他视频文件用系统播放器

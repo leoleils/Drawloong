@@ -55,6 +55,19 @@ class ProjectExplorer(QWidget):
         refresh_btn.setFixedSize(24, 24)
         refresh_btn.setToolTip("刷新")
         refresh_btn.clicked.connect(self.refresh)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                color: #666;
+                font-size: 16px;
+            }
+            QPushButton:hover {
+                background: #e9ecef;
+                border-radius: 4px;
+                color: #333;
+            }
+        """)
         header_layout.addWidget(refresh_btn)
         
         layout.addWidget(header)
@@ -144,25 +157,43 @@ class ProjectExplorer(QWidget):
             items = os.listdir(folder_path)
             items.sort()
             
+            # 判断是图集还是视频集
+            folder_name = parent_item.text(0)
+            is_image_folder = "图集" in folder_name
+            is_video_folder = "视频集" in folder_name
+            
             for item_name in items:
                 item_path = os.path.join(folder_path, item_name)
                 
                 if os.path.isfile(item_path):
-                    file_item = QTreeWidgetItem(parent_item)
-                    
-                    # 根据文件类型设置图标和文本
+                    # 根据文件夹类型过滤文件
                     if item_path.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        # 图片文件 - 使用缩略图
+                        # 图片文件
+                        if not is_image_folder:
+                            continue  # 视频集中跳过图片
+                        
+                        file_item = QTreeWidgetItem(parent_item)
+                        # 使用缩略图
                         thumbnail = self.create_thumbnail(item_path)
                         if thumbnail:
                             file_item.setIcon(0, QIcon(thumbnail))
                         file_item.setText(0, item_name)
+                        file_item.setData(0, Qt.UserRole, item_path)
+                        
                     elif item_path.lower().endswith('.mp4'):
-                        file_item.setText(0, f"🎬 {item_name}")
-                    else:
-                        file_item.setText(0, f"📄 {item_name}")
-                    
-                    file_item.setData(0, Qt.UserRole, item_path)
+                        # 视频文件
+                        if not is_video_folder:
+                            continue  # 图集中跳过视频
+                        
+                        file_item = QTreeWidgetItem(parent_item)
+                        # 使用视频预览图
+                        thumbnail = self.create_video_thumbnail(item_path)
+                        if thumbnail:
+                            file_item.setIcon(0, QIcon(thumbnail))
+                        else:
+                            file_item.setText(0, f"🎬 {item_name}")
+                        file_item.setText(0, item_name)
+                        file_item.setData(0, Qt.UserRole, item_path)
         except Exception as e:
             print(f"加载文件夹失败: {e}")
     
@@ -190,6 +221,59 @@ class ProjectExplorer(QWidget):
             return thumbnail
         except Exception as e:
             print(f"创建缩略图失败: {e}")
+            return None
+    
+    def create_video_thumbnail(self, video_path):
+        """
+        创建视频预览图（提取第一帧）
+        
+        Args:
+            video_path: 视频文件路径
+            
+        Returns:
+            QPixmap: 预览图，失败返回 None
+        """
+        try:
+            import cv2
+            import numpy as np
+            from PyQt5.QtGui import QImage
+            
+            # 打开视频文件
+            cap = cv2.VideoCapture(video_path)
+            
+            if not cap.isOpened():
+                return None
+            
+            # 读取第一帧
+            ret, frame = cap.read()
+            cap.release()
+            
+            if not ret or frame is None:
+                return None
+            
+            # 转换BGR到RGB
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
+            # 转换为QImage
+            height, width, channel = frame_rgb.shape
+            bytes_per_line = 3 * width
+            q_image = QImage(frame_rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
+            
+            # 转换为QPixmap并缩放
+            pixmap = QPixmap.fromImage(q_image)
+            thumbnail = pixmap.scaled(
+                48, 48,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
+            
+            return thumbnail
+            
+        except ImportError:
+            # 如果没有安装cv2，返回None
+            return None
+        except Exception as e:
+            # 静默失败，不打印错误信息
             return None
     
     def refresh(self):
