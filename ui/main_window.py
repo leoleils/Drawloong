@@ -216,44 +216,59 @@ class MainWindow(QMainWindow):
         tab_layout = QVBoxLayout(tab_widget)
         tab_layout.setContentsMargins(0, 0, 0, 0)
         
-        # 垂直分割器
-        vsplitter = QSplitter(Qt.Vertical)
+        # 主水平分割器 - 左右布局
+        main_splitter = QSplitter(Qt.Horizontal)
         
-        # 上部：上传和配置
-        top_widget = QWidget()
-        top_layout = QHBoxLayout(top_widget)
-        top_layout.setContentsMargins(0, 0, 0, 0)
+        # 左侧：上传图片和视频浏览（上下对称）
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
         
+        left_splitter = QSplitter(Qt.Vertical)
+        
+        # 上：上传图片
         self.upload_widget = UploadWidget()
         self.upload_widget.set_project_manager(self.project_manager)
-        top_layout.addWidget(self.upload_widget, stretch=1)
+        left_splitter.addWidget(self.upload_widget)
         
-        self.config_panel = ConfigPanel()
-        top_layout.addWidget(self.config_panel, stretch=1)
-        
-        vsplitter.addWidget(top_widget)
-        
-        # 下部：水平分割 - 视频浏览器和任务列表
-        bottom_widget = QWidget()
-        bottom_layout = QHBoxLayout(bottom_widget)
-        bottom_layout.setContentsMargins(0, 0, 0, 0)
-        
-        # 左：视频浏览器（更大的空间）
+        # 下：视频浏览
         self.video_viewer = VideoViewerWidget()
-        bottom_layout.addWidget(self.video_viewer, stretch=3)
+        left_splitter.addWidget(self.video_viewer)
         
-        # 右：任务列表（更小的空间）
+        # 上下各占一半
+        left_splitter.setStretchFactor(0, 1)
+        left_splitter.setStretchFactor(1, 1)
+        
+        left_layout.addWidget(left_splitter)
+        main_splitter.addWidget(left_widget)
+        
+        # 右侧：配置面板和任务列表
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        
+        right_splitter = QSplitter(Qt.Vertical)
+        
+        # 上：配置面板（占大部分）
+        self.config_panel = ConfigPanel()
+        right_splitter.addWidget(self.config_panel)
+        
+        # 下：任务列表
         self.task_list = TaskListWidget(self.task_manager, self.project_manager)
-        self.task_list.setMaximumWidth(450)  # 限制任务列表最大宽度
-        bottom_layout.addWidget(self.task_list, stretch=1)
+        right_splitter.addWidget(self.task_list)
         
-        vsplitter.addWidget(bottom_widget)
+        # 配置面板占更多空间
+        right_splitter.setStretchFactor(0, 3)
+        right_splitter.setStretchFactor(1, 1)
         
-        # 上部配置区域占更多空间
-        vsplitter.setStretchFactor(0, 3)
-        vsplitter.setStretchFactor(1, 2)
+        right_layout.addWidget(right_splitter)
+        main_splitter.addWidget(right_widget)
         
-        tab_layout.addWidget(vsplitter)
+        # 左右比例：左侧占1份，右侧占1份
+        main_splitter.setStretchFactor(0, 1)
+        main_splitter.setStretchFactor(1, 1)
+        
+        tab_layout.addWidget(main_splitter)
         return tab_widget
     
     def create_placeholder_tab(self, title, message):
