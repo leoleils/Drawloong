@@ -20,9 +20,9 @@ model: "wan2.6-t2i"
 
 ### API接口
 
-**异步调用接口**（当前使用）：
+**同步调用接口**（万相2.6使用）：
 ```
-https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis
+https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
 ```
 
 **请求格式**：
@@ -30,17 +30,60 @@ https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis
 {
   "model": "wan2.6-t2i",
   "input": {
-    "prompt": "提示词"
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "text": "一间有着精致窗户的花店，漂亮的木质门，摆放着花朵"
+          }
+        ]
+      }
+    ]
   },
   "parameters": {
-    "size": "1280*1280",
+    "size": "1328*1328",
     "n": 1,
-    "prompt_extend": true
+    "prompt_extend": true,
+    "watermark": false,
+    "negative_prompt": ""
   }
 }
 ```
 
-> 💡 **说明**：万相2.6目前异步调用使用与2.5相同的接口和格式，调用方式完全一致
+**响应格式**：
+```json
+{
+  "output": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "message": {
+          "content": [
+            {
+              "image": "https://dashscope-result-bj.oss-cn-beijing.aliyuncs.com/xxxx.png",
+              "type": "image"
+            }
+          ],
+          "role": "assistant"
+        }
+      }
+    ],
+    "finished": true
+  },
+  "usage": {
+    "image_count": 1,
+    "size": "1328*1328"
+  },
+  "request_id": "xxxxx"
+}
+```
+
+> 💡 **重要说明**：
+> - 万相2.6使用**同步接口**，不是异步接口
+> - 使用 `messages` 格式，类似对话模式
+> - 参数 `n` 目前只支持 1（生成1张图片）
+> - 响应立即返回图片URL，无需轮询
 
 ### 图像分辨率
 

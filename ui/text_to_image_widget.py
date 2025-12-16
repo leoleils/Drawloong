@@ -36,44 +36,74 @@ class TextToImageWorker(QThread):
         self.user_negative_prompt = negative_prompt  # 保存用户输入的反向提示词
     
     def run(self):
-        """执行文生图任务（异步）"""
+        """执行文生图任务"""
         try:
             import requests
             import json
             import time
             from datetime import datetime
             
-            # 1. 提交异步任务
-            self.progress.emit("正在提交生成任务...")
-            task_id = self.submit_task()
-            if not task_id:
-                return
+            # 判断是否为万相2.6（使用同步接口）
+            is_wan26 = self.model == 'wan2.6-t2i'
             
-            # 2. 轮询任务状态
-            self.progress.emit(f"任务已提交，ID: {task_id}\n正在生成图片...")
-            result = self.poll_task_status(task_id)
-            if not result:
-                return
-            
-            image_url = result.get('url')
-            orig_prompt = result.get('orig_prompt', '')
-            actual_prompt = result.get('actual_prompt', '')
-            seed = result.get('seed', '')  # 获取实际使用的seed
-            
-            # 3. 下载图片
-            self.progress.emit("正在下载图片...")
-            output_path = self.download_image(image_url)
-            if output_path:
-                # 构建提示词信息（包括模型、反向提示词、seed）
-                prompt_info = {
-                    'model': self.model,
-                    'size': self.size,
-                    'orig_prompt': orig_prompt,
-                    'actual_prompt': actual_prompt,
-                    'negative_prompt': self.user_negative_prompt,
-                    'seed': seed  # 添加seed信息
-                }
-                self.finished.emit(image_url, output_path, prompt_info)
+            if is_wan26:
+                # 万相2.6使用同步接口
+                self.progress.emit("正在生成图片...")
+                result = self.submit_task_sync()
+                if not result:
+                    return
+                
+                # 从同步响应中提取图片URL
+                image_url = result.get('url')
+                orig_prompt = result.get('orig_prompt', self.prompt)
+                actual_prompt = result.get('actual_prompt', self.prompt)
+                seed = result.get('seed', '')
+                
+                # 下载图片
+                self.progress.emit("正在下载图片...")
+                output_path = self.download_image(image_url)
+                if output_path:
+                    prompt_info = {
+                        'model': self.model,
+                        'size': self.size,
+                        'orig_prompt': orig_prompt,
+                        'actual_prompt': actual_prompt,
+                        'negative_prompt': self.user_negative_prompt,
+                        'seed': seed
+                    }
+                    self.finished.emit(image_url, output_path, prompt_info)
+            else:
+                # 其他模型使用异步接口
+                # 1. 提交异步任务
+                self.progress.emit("正在提交生成任务...")
+                task_id = self.submit_task()
+                if not task_id:
+                    return
+                
+                # 2. 轮询任务状态
+                self.progress.emit(f"任务已提交，ID: {task_id}\n正在生成图片...")
+                result = self.poll_task_status(task_id)
+                if not result:
+                    return
+                
+                image_url = result.get('url')
+                orig_prompt = result.get('orig_prompt', '')
+                actual_prompt = result.get('actual_prompt', '')
+                seed = result.get('seed', '')
+                
+                # 3. 下载图片
+                self.progress.emit("正在下载图片...")
+                output_path = self.download_image(image_url)
+                if output_path:
+                    prompt_info = {
+                        'model': self.model,
+                        'size': self.size,
+                        'orig_prompt': orig_prompt,
+                        'actual_prompt': actual_prompt,
+                        'negative_prompt': self.user_negative_prompt,
+                        'seed': seed
+                    }
+                    self.finished.emit(image_url, output_path, prompt_info)
             
         except Exception as e:
             self.error.emit(f"生成失败: {str(e)}")
@@ -156,6 +186,85 @@ class TextToImageWorker(QThread):
                 
         except Exception as e:
             self.error.emit(f"提交任务异常: {str(e)}")
+            return None
+    
+    def submit_task_sync(self):
+        """提交同步生成任务（万相2.6专用）"""
+        try:
+            import requests
+            
+            # 万相2.6使用multimodal-generation同步接口
+            url = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation'
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {self.api_client.api_key}'
+            }
+            
+            # 构建messages格式
+            data = {
+                "model": self.model,
+                "input": {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "text": self.prompt
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "parameters": {
+                    "size": self.size,
+                    "n": 1,  # 万相2.6目前只支持n=1
+                    "prompt_extend": self.prompt_extend,
+                    "watermark": False
+                }
+            }
+            
+            # 添加negative_prompt（如果有）
+            if self.negative_prompt:
+                data["parameters"]["negative_prompt"] = self.negative_prompt
+            
+            # 添加seed参数（如果指定）
+            if self.seed is not None:
+                data["parameters"]["seed"] = self.seed
+            
+            # 同步调用，可能需要较长时间
+            response = requests.post(url, headers=headers, json=data, timeout=120)
+            result = response.json()
+            
+            # 检查错误
+            if 'code' in result:
+                error_code = result.get('code', '')
+                error_msg = result.get('message', 'Unknown error')
+                friendly_msg = self.get_friendly_error_message(error_code, error_msg)
+                self.error.emit(friendly_msg)
+                return None
+            
+            # 从同步响应中提取图片URL
+            if 'output' in result and 'choices' in result['output']:
+                choices = result['output']['choices']
+                if choices and len(choices) > 0:
+                    first_choice = choices[0]
+                    if 'message' in first_choice and 'content' in first_choice['message']:
+                        content = first_choice['message']['content']
+                        if content and len(content) > 0:
+                            image_data = content[0]
+                            if 'image' in image_data:
+                                return {
+                                    'url': image_data['image'],
+                                    'orig_prompt': self.prompt,
+                                    'actual_prompt': self.prompt,  # 2.6同步接口可能不返回actual_prompt
+                                    'seed': ''  # 2.6同步接口可能不返回seed
+                                }
+            
+            self.error.emit("同步生成成功但未获取到图片URL")
+            return None
+            
+        except Exception as e:
+            self.error.emit(f"同步生成异常: {str(e)}")
             return None
     
     def poll_task_status(self, task_id):
