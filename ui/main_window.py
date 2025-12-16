@@ -72,6 +72,9 @@ class MainWindow(QMainWindow):
         self.resize(450, 550)
         self.setMinimumSize(450, 550)
         
+        # 窗口居中显示
+        self.center_window()
+        
         # 设置窗口图标
         import os
         logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logo.png')
@@ -378,6 +381,15 @@ class MainWindow(QMainWindow):
         # 任务列表信号
         self.task_list.task_updated.connect(self.on_task_updated)
     
+    def center_window(self):
+        """将窗口居中显示"""
+        from PyQt5.QtWidgets import QDesktopWidget
+        screen = QDesktopWidget().availableGeometry()
+        window_size = self.frameGeometry()
+        x = (screen.width() - window_size.width()) // 2
+        y = (screen.height() - window_size.height()) // 2
+        self.move(x, y)
+    
     def check_api_key(self):
         """检查 API 密钥配置"""
         if not settings.is_api_key_valid():
@@ -654,6 +666,7 @@ class MainWindow(QMainWindow):
         # 调整窗口大小为工作区尺寸（适配13.3寸1920×1080屏幕）
         self.setMinimumSize(1200, 700)
         self.resize(1600, 900)
+        self.center_window()  # 居中显示
         
         # 显示菜单栏和状态栏
         self.menuBar().show()
