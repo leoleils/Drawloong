@@ -235,6 +235,9 @@ class TextToImageWorker(QThread):
             response = requests.post(url, headers=headers, json=data, timeout=120)
             result = response.json()
             
+            # 调试：打印完整响应以便排查
+            print(f"[DEBUG] 万相2.6 API响应: {result}")
+            
             # 检查错误
             if 'code' in result:
                 error_code = result.get('code', '')
@@ -243,7 +246,7 @@ class TextToImageWorker(QThread):
                 self.error.emit(friendly_msg)
                 return None
             
-            # 从同步响应中提取图片URL
+            # 从同步响应中提取图片URL和改写提示词
             if 'output' in result and 'choices' in result['output']:
                 choices = result['output']['choices']
                 if choices and len(choices) > 0:
@@ -253,11 +256,19 @@ class TextToImageWorker(QThread):
                         if content and len(content) > 0:
                             image_data = content[0]
                             if 'image' in image_data:
+                                # 提取改写后的提示词（如果有）
+                                actual_prompt = image_data.get('actual_prompt', '')
+                                seed = image_data.get('seed', '')
+                                # 如果content中没有，尝试从output中获取
+                                if not actual_prompt:
+                                    actual_prompt = result['output'].get('actual_prompt', '')
+                                if not seed:
+                                    seed = result['output'].get('seed', '')
                                 return {
                                     'url': image_data['image'],
                                     'orig_prompt': self.prompt,
-                                    'actual_prompt': self.prompt,  # 2.6同步接口可能不返回actual_prompt
-                                    'seed': ''  # 2.6同步接口可能不返回seed
+                                    'actual_prompt': actual_prompt if actual_prompt else self.prompt,
+                                    'seed': str(seed) if seed else ''
                                 }
             
             self.error.emit("同步生成成功但未获取到图片URL")
