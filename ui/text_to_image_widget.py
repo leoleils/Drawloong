@@ -83,43 +83,32 @@ class TextToImageWorker(QThread):
         try:
             import requests
             
-            url = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis'
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {self.api_client.api_key}',
-                'X-DashScope-Async': 'enable'
-            }
+            # 判断是否为万相2.6模型（使用新接口）
+            is_wan26 = self.model == 'wan2.6-t2i'
             
-            # 判断是否为万相模型（以wan开头）
-            is_wanxiang = self.model.startswith('wan')
-            
-            if is_wanxiang:
-                # 万相模型的API格式
-                data = {
-                    "model": self.model,
-                    "input": {
-                        "prompt": self.prompt
-                    },
-                    "parameters": {
-                        "size": self.size,
-                        "n": 1,
-                        "prompt_extend": self.prompt_extend  # 添加提示词改写控制
-                    }
+            if is_wan26:
+                # 万相2.6使用新的multimodal-generation接口
+                url = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation'
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {self.api_client.api_key}',
+                    'X-DashScope-Async': 'enable'
                 }
                 
-                # 万相模型：negative_prompt 在 input 中
-                if self.negative_prompt:
-                    data["input"]["negative_prompt"] = self.negative_prompt
-                
-                # 添加seed参数（如果指定）
-                if self.seed is not None:
-                    data["parameters"]["seed"] = self.seed
-            else:
-                # 通义千问模型的API格式
+                # 构建messages格式
                 data = {
                     "model": self.model,
                     "input": {
-                        "prompt": self.prompt
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "text": self.prompt
+                                    }
+                                ]
+                            }
+                        ]
                     },
                     "parameters": {
                         "size": self.size,
@@ -129,13 +118,68 @@ class TextToImageWorker(QThread):
                     }
                 }
                 
-                # 通义千问模型：negative_prompt 在 parameters 中
+                # 添加negative_prompt（如果有）
                 if self.negative_prompt:
                     data["parameters"]["negative_prompt"] = self.negative_prompt
                 
                 # 添加seed参数（如果指定）
                 if self.seed is not None:
                     data["parameters"]["seed"] = self.seed
+            else:
+                # 其他模型使用旧的text2image接口
+                url = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis'
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {self.api_client.api_key}',
+                    'X-DashScope-Async': 'enable'
+                }
+                
+                # 判断是否为万相模型（以wan开头）
+                is_wanxiang = self.model.startswith('wan')
+                
+                if is_wanxiang:
+                    # 万相模型的API格式
+                    data = {
+                        "model": self.model,
+                        "input": {
+                            "prompt": self.prompt
+                        },
+                        "parameters": {
+                            "size": self.size,
+                            "n": 1,
+                            "prompt_extend": self.prompt_extend
+                        }
+                    }
+                    
+                    # 万相模型：negative_prompt 在 input 中
+                    if self.negative_prompt:
+                        data["input"]["negative_prompt"] = self.negative_prompt
+                    
+                    # 添加seed参数（如果指定）
+                    if self.seed is not None:
+                        data["parameters"]["seed"] = self.seed
+                else:
+                    # 通义千问模型的API格式
+                    data = {
+                        "model": self.model,
+                        "input": {
+                            "prompt": self.prompt
+                        },
+                        "parameters": {
+                            "size": self.size,
+                            "n": 1,
+                            "prompt_extend": self.prompt_extend,
+                            "watermark": False
+                        }
+                    }
+                    
+                    # 通义千问模型：negative_prompt 在 parameters 中
+                    if self.negative_prompt:
+                        data["parameters"]["negative_prompt"] = self.negative_prompt
+                    
+                    # 添加seed参数（如果指定）
+                    if self.seed is not None:
+                        data["parameters"]["seed"] = self.seed
             
             response = requests.post(url, headers=headers, json=data, timeout=30)
             result = response.json()

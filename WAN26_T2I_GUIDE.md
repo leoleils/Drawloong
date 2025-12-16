@@ -18,6 +18,23 @@
 model: "wan2.6-t2i"
 ```
 
+### API接口
+
+**重要变更**：万相2.6使用新的API接口
+
+```
+旧接口（2.5及以下）：
+https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis
+
+新接口（2.6）：
+https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
+```
+
+**请求格式变化**：
+- 2.6使用 `messages` 格式（类似对话）
+- 提示词放在 `messages[0].content[0].text` 中
+- 其他参数保持在 `parameters` 中
+
 ### 图像分辨率
 
 **总像素约束**
