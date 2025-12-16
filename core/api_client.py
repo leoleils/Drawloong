@@ -166,12 +166,12 @@ class DashScopeClient:
         Returns:
             API 响应数据
         """
-        # 判断是否为万相2.5模型（使用异步API）
-        is_wan25 = model.startswith('wan2.5')
+        # 判断是否为万相模型（使用异步API）
+        is_wanxiang = model.startswith('wan2.') or model == 'wan2.6-image'
         
-        if is_wan25:
-            # 万相2.5使用异步API
-            return self._submit_wan25_image_edit(images, prompt, model, n, prompt_extend)
+        if is_wanxiang:
+            # 万相2.5/2.6使用异步API
+            return self._submit_wanxiang_image_edit(images, prompt, model, n, prompt_extend)
         else:
             # 其他模型使用同步API
             return self._submit_qwen_image_edit(images, prompt, model, n, negative_prompt, prompt_extend)
@@ -244,9 +244,9 @@ class DashScopeClient:
                 f"(状态码: {response.status_code})"
             )
     
-    def _submit_wan25_image_edit(self, images: list, prompt: str, model: str,
-                                n: int, prompt_extend: bool) -> Dict:
-        """提交万相2.5图像编辑任务（异步）"""
+    def _submit_wanxiang_image_edit(self, images: list, prompt: str, model: str,
+                                   n: int, prompt_extend: bool) -> Dict:
+        """提交万相图像编辑任务（异步，支持2.5和2.6）"""
         # 准备图片URL列表
         image_urls = []
         for image_path in images:
@@ -266,22 +266,56 @@ class DashScopeClient:
             mime_type = mime_types.get(ext, 'image/jpeg')
             image_urls.append(f"data:{mime_type};base64,{image_data}")
         
-        # 准备请求数据
-        payload = {
-            "model": model,
-            "input": {
-                "prompt": prompt,
-                "images": image_urls
-            },
-            "parameters": {
-                "n": n,
-                "prompt_extend": prompt_extend
+        # 判断是否为万相2.6
+        is_wan26 = model == 'wan2.6-image'
+        
+        if is_wan26:
+            # 万相2.6使用新的image-generation接口和messages格式
+            content = [{"text": prompt}]
+            # 添加图片到content
+            for image_url in image_urls:
+                content.append({"image": image_url})
+            
+            payload = {
+                "model": model,
+                "input": {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": content
+                        }
+                    ]
+                },
+                "parameters": {
+                    "n": n,
+                    "prompt_extend": prompt_extend,
+                    "watermark": False,
+                    "size": "1280*1280"  # 默认尺寸
+                }
             }
-        }
+            
+            # 万相2.6使用新接口
+            url = f'{self.base_url}/services/aigc/image-generation/generation'
+        else:
+            # 万相2.5使用旧格式
+            payload = {
+                "model": model,
+                "input": {
+                    "prompt": prompt,
+                    "images": image_urls
+                },
+                "parameters": {
+                    "n": n,
+                    "prompt_extend": prompt_extend
+                }
+            }
+            
+            # 万相2.5使用旧接口
+            url = f'{self.base_url}/services/aigc/image2image/image-synthesis'
         
         # 发送异步请求
         response = requests.post(
-            f'{self.base_url}/services/aigc/image2image/image-synthesis',
+            url,
             headers=self._get_headers(async_mode=True),
             data=json.dumps(payload),
             timeout=60

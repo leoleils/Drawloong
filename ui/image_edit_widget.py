@@ -41,11 +41,11 @@ class ImageEditWorker(QThread):
             import requests
             import time
             
-            # 判断是否为万相2.5模型（异步模式）
-            is_wan25 = self.model.startswith('wan2.5')
+            # 判断是否为万相模型（异步模式）
+            is_wanxiang = self.model.startswith('wan2.') or self.model == 'wan2.6-image'
             
-            if is_wan25:
-                # 万相2.5：异步模式
+            if is_wanxiang:
+                # 万相2.5/2.6：异步模式
                 self._run_async_mode()
             else:
                 # 其他模型：同步模式
@@ -544,8 +544,10 @@ class ImageEditWidget(QWidget):
         group_layout.addWidget(model_label)
         
         self.model_combo = QComboBox()
-        # 万相2.5模型（推荐，异步）
-        self.model_combo.addItem("🌟 wan2.5-i2i-preview（推荐）", "wan2.5-i2i-preview")
+        # 万相2.6模型（最新，异步）
+        self.model_combo.addItem("🌟 wan2.6-image（最新）", "wan2.6-image")
+        # 万相2.5模型（异步）
+        self.model_combo.addItem("wan2.5-i2i-preview", "wan2.5-i2i-preview")
         # 通义千问模型（同步）
         self.model_combo.addItem("qwen-image-edit-plus", "qwen-image-edit-plus")
         self.model_combo.addItem("qwen-image-edit-plus-2025-10-30", "qwen-image-edit-plus-2025-10-30")
@@ -631,8 +633,10 @@ class ImageEditWidget(QWidget):
     def on_model_changed(self, index):
         """模型改变事件"""
         model = self.model_combo.itemData(index)
-        if model and model.startswith('wan2.5'):
-            self.model_desc_label.setText("🌟 万相2.5模型：支持单图编辑和多图融合，异步处理，效果更优")
+        if model == 'wan2.6-image':
+            self.model_desc_label.setText("🌟 万相2.6模型：最新模型，支持参考图生图、图文混合输出，异步处理")
+        elif model and model.startswith('wan2.5'):
+            self.model_desc_label.setText("万相2.5模型：支持单图编辑和多图融合，异步处理，效果更优")
             # 万相2.5不支持反向提示词
             self.neg_prompt_edit.setEnabled(False)
             self.neg_prompt_edit.setPlaceholderText("此模型不支持反向提示词")
