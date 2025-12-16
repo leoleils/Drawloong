@@ -101,20 +101,30 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # 3. 安装依赖
 pip install -r requirements.txt
 
-# 4. 配置 API 密钥
-cp .env.example .env
-# 编辑 .env 文件，填入 DashScope API 密钥
-
-# 5. 启动应用
+# 4. 启动应用
 python main.py
 ```
 
-### 获取 API 密钥
+### 配置 API 密钥
+
+**推荐方式：在应用界面中配置**
 
 1. 访问 [阿里云 DashScope](https://dashscope.console.aliyun.com/)
 2. 注册/登录账号
 3. 创建 API Key
-4. 在应用设置中配置密钥
+4. 启动应用后，点击右上角"⚙ 设置"按钮
+5. 在设置页面输入 API 密钥并保存
+
+**备用方式：使用环境变量（可选）**
+
+如果需要通过环境变量配置：
+```bash
+# 创建 .env 文件
+cp .env.example .env
+# 编辑 .env 文件，填入 DashScope API 密钥
+```
+
+> 💡 **提示**：应用会优先使用界面配置的密钥，环境变量作为备用方式
 
 ---
 
@@ -133,11 +143,17 @@ python main.py
 
 ```
 我的工程/
-├── 📂 inputs/          # 输入素材（图片）
-├── 📂 outputs/         # 输出结果（视频、图片）
+├── 📂 pictures/        # 图集（输入图片）
+├── 📂 videos/          # 视频集（输出视频）
 ├── 📄 project.json     # 工程配置
 └── 📄 tasks.json       # 任务记录
 ```
+
+> 💡 **说明**：
+> - `pictures/` - 存放输入的图片素材，在资源管理器中显示为"图集"
+> - `videos/` - 存放生成的视频文件，在资源管理器中显示为"视频集"
+> - `project.json` - 保存工程的配置信息
+> - `tasks.json` - 记录该工程的所有任务历史
 
 ### 功能使用
 
