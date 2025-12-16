@@ -185,6 +185,19 @@ exe = EXE(
 
 ### 添加图标
 
+打包脚本会自动从 `logo.png` 生成 `logo.ico` 图标文件。
+
+**自动生成**:
+1. 确保项目根目录有 `logo.png` 文件
+2. 确保有 `create_icon.py` 脚本
+3. 运行打包脚本，会自动生成 `logo.ico`
+
+**手动生成**:
+```cmd
+python create_icon.py
+```
+
+**自定义图标**:
 1. 准备 `.ico` 格式图标文件
 2. 命名为 `logo.ico`
 3. 放在项目根目录

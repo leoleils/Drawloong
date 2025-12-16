@@ -97,10 +97,8 @@ pyz = PYZ(
     cipher=block_cipher
 )
 
-# 检查图标文件
-icon_file = None
-if os.path.exists('logo.ico'):
-    icon_file = 'logo.ico'
+# 图标文件路径
+icon_file = 'logo.ico'
 
 exe = EXE(
     pyz,
@@ -118,8 +116,8 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=icon_file,
-    version='version_info.txt' if os.path.exists('version_info.txt') else None,
+    icon=icon_file,  # 使用 logo.ico 作为程序图标
+    version='version_info.txt',  # Windows 版本信息
 )
 
 coll = COLLECT(

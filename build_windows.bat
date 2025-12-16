@@ -4,13 +4,13 @@ setlocal enabledelayedexpansion
 
 REM ========================================
 REM 烛龙绘影 Drawloong Windows 打包脚本
-REM 版本: v1.15.0
+REM 版本: v1.15.1
 REM ========================================
 
 echo.
 echo ========================================
 echo   烛龙绘影 Drawloong Windows 打包脚本
-echo   版本: v1.15.0
+echo   版本: v1.15.1
 echo ========================================
 echo.
 
@@ -74,6 +74,24 @@ if errorlevel 1 (
 REM 安装可选依赖（OpenCV用于视频缩略图）
 echo [信息] 安装 OpenCV（可选，用于视频缩略图）...
 pip install opencv-python -i %PIP_INDEX_URL% --trusted-host %PIP_TRUSTED_HOST%
+
+REM 安装Pillow（用于生成图标）
+echo [信息] 安装 Pillow（用于生成图标）...
+pip install Pillow -i %PIP_INDEX_URL% --trusted-host %PIP_TRUSTED_HOST%
+
+REM 生成ICO图标文件
+echo.
+echo [3.5/7] 生成程序图标...
+if exist "logo.png" (
+    if exist "create_icon.py" (
+        echo [信息] 正在从 logo.png 生成 logo.ico...
+        python create_icon.py
+    ) else (
+        echo [警告] 未找到 create_icon.py 脚本
+    )
+) else (
+    echo [警告] 未找到 logo.png，将不使用自定义图标
+)
 
 REM 清理旧的构建文件
 echo.

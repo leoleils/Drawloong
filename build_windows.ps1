@@ -15,7 +15,7 @@ $env:PIP_TRUSTED_HOST = "pypi.tuna.tsinghua.edu.cn"
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  烛龙绘影 Drawloong Windows 打包脚本" -ForegroundColor Cyan
-Write-Host "  版本: v1.15.0" -ForegroundColor Cyan
+Write-Host "  版本: v1.15.1" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -104,6 +104,22 @@ if ($LASTEXITCODE -ne 0) {
 # 安装OpenCV（可选）
 Write-Info "安装 OpenCV（用于视频缩略图）..."
 pip install opencv-python -i $env:PIP_INDEX_URL --trusted-host $env:PIP_TRUSTED_HOST 2>&1 | Out-Null
+
+# 安装Pillow（用于生成图标）
+Write-Info "安装 Pillow（用于生成图标）..."
+pip install Pillow -i $env:PIP_INDEX_URL --trusted-host $env:PIP_TRUSTED_HOST 2>&1 | Out-Null
+
+# 3.5 生成ICO图标
+Write-Host ""
+Write-Step "3.5/7" "生成程序图标..."
+if ((Test-Path "logo.png") -and (Test-Path "create_icon.py")) {
+    Write-Info "正在从 logo.png 生成 logo.ico..."
+    python create_icon.py
+} elseif (-not (Test-Path "logo.png")) {
+    Write-Warning-Message "未找到 logo.png，将不使用自定义图标"
+} else {
+    Write-Warning-Message "未找到 create_icon.py 脚本"
+}
 
 # 4. 清理旧的构建文件
 Write-Host ""
