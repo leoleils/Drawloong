@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QTextEdit, QComboBox, QPushButton, QGroupBox,
     QSplitter, QScrollArea, QMessageBox, QGridLayout,
-    QSpinBox, QListWidget, QListWidgetItem, QFileDialog
+    QSpinBox, QListWidget, QListWidgetItem, QFileDialog, QCheckBox
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 from PyQt5.QtGui import QPixmap, QIcon, QDragEnterEvent, QDropEvent
@@ -24,7 +24,7 @@ class ImageEditWorker(QThread):
     error = pyqtSignal(str)  # error_message
     progress = pyqtSignal(str)  # status_message
     
-    def __init__(self, api_client, images, prompt, model, n, negative_prompt, prompt_extend, output_folder, size=""):
+    def __init__(self, api_client, images, prompt, model, n, negative_prompt, prompt_extend, output_folder, size="", enable_interleave=False, max_images=5):
         super().__init__()
         self.api_client = api_client
         self.images = images
@@ -35,6 +35,8 @@ class ImageEditWorker(QThread):
         self.prompt_extend = prompt_extend
         self.output_folder = output_folder
         self.size = size  # 输出尺寸
+        self.enable_interleave = enable_interleave  # 图文混合模式
+        self.max_images = max_images  # 最大图片数量
     
     def run(self):
         """执行图像编辑任务"""
@@ -68,7 +70,9 @@ class ImageEditWorker(QThread):
             n=self.n,
             negative_prompt=self.negative_prompt,
             prompt_extend=self.prompt_extend,
-            size=self.size
+            size=self.size,
+            enable_interleave=self.enable_interleave,
+            max_images=self.max_images
         )
         
         # 2. 检查响应
@@ -111,7 +115,9 @@ class ImageEditWorker(QThread):
             n=self.n,
             negative_prompt=self.negative_prompt,
             prompt_extend=self.prompt_extend,
-            size=self.size
+            size=self.size,
+            enable_interleave=self.enable_interleave,
+            max_images=self.max_images
         )
         
         # 2. 检查响应
@@ -642,6 +648,40 @@ class ImageEditWidget(QWidget):
         self.size_label.hide()
         self.size_combo.hide()
         
+        # 图文混合输出（仅万相2.6显示）
+        self.interleave_checkbox = QCheckBox("启用图文混合输出")
+        self.interleave_checkbox.setStyleSheet("""
+            QCheckBox {
+                font-size: 12px;
+                padding: 5px;
+            }
+        """)
+        self.interleave_checkbox.setToolTip("生成包含文字说明和图片的教程式内容")
+        self.interleave_checkbox.stateChanged.connect(self.on_interleave_changed)
+        group_layout.addWidget(self.interleave_checkbox)
+        
+        # 最大图片数量（仅图文混合模式显示）
+        max_images_layout = QHBoxLayout()
+        self.max_images_label = QLabel("最多生成图片数:")
+        self.max_images_label.setStyleSheet("font-weight: bold;")
+        max_images_layout.addWidget(self.max_images_label)
+        
+        self.max_images_spinbox = QSpinBox()
+        self.max_images_spinbox.setMinimum(1)
+        self.max_images_spinbox.setMaximum(5)
+        self.max_images_spinbox.setValue(3)
+        self.max_images_spinbox.setToolTip("实际生成数量可能少于设定值")
+        max_images_layout.addWidget(self.max_images_spinbox)
+        max_images_layout.addStretch()
+        
+        self.max_images_layout_widget = QWidget()
+        self.max_images_layout_widget.setLayout(max_images_layout)
+        group_layout.addWidget(self.max_images_layout_widget)
+        
+        # 默认隐藏图文混合选项（仅万相2.6显示）
+        self.interleave_checkbox.hide()
+        self.max_images_layout_widget.hide()
+        
         # 生成按钮
         self.generate_btn = QPushButton("开始编辑")
         self.generate_btn.setStyleSheet("""
@@ -692,6 +732,22 @@ class ImageEditWidget(QWidget):
         else:
             self.mode_hint.setText("💡 多图融合：选择2-3张图片进行融合处理")
     
+    def on_interleave_changed(self, state):
+        """图文混合模式切换"""
+        is_enabled = state == 2  # Qt.Checked
+        
+        if is_enabled:
+            # 启用图文混合模式
+            self.max_images_layout_widget.show()
+            # 图文混合模式下n固定为1
+            self.n_spinbox.setValue(1)
+            self.n_spinbox.setEnabled(False)
+        else:
+            # 禁用图文混合模式
+            self.max_images_layout_widget.hide()
+            # 恢复n的设置
+            self.n_spinbox.setEnabled(True)
+    
     def on_model_changed(self, index):
         """模型改变事件"""
         model = self.model_combo.itemData(index)
@@ -704,6 +760,11 @@ class ImageEditWidget(QWidget):
             # 显示尺寸选择
             self.size_label.show()
             self.size_combo.show()
+            # 显示图文混合选项
+            self.interleave_checkbox.show()
+            # 根据图文混合状态显示max_images
+            if self.interleave_checkbox.isChecked():
+                self.max_images_layout_widget.show()
             # 万相2.6不支持反向提示词
             self.neg_prompt_edit.setEnabled(False)
             self.neg_prompt_edit.setPlaceholderText("此模型不支持反向提示词")
@@ -712,6 +773,9 @@ class ImageEditWidget(QWidget):
             # 显示尺寸选择
             self.size_label.show()
             self.size_combo.show()
+            # 隐藏图文混合选项（2.5不支持）
+            self.interleave_checkbox.hide()
+            self.max_images_layout_widget.hide()
             # 万相2.5不支持反向提示词
             self.neg_prompt_edit.setEnabled(False)
             self.neg_prompt_edit.setPlaceholderText("此模型不支持反向提示词")
@@ -721,6 +785,9 @@ class ImageEditWidget(QWidget):
             # 隐藏尺寸选择
             self.size_label.hide()
             self.size_combo.hide()
+            # 隐藏图文混合选项
+            self.interleave_checkbox.hide()
+            self.max_images_layout_widget.hide()
             # 通义千问支持反向提示词
             self.neg_prompt_edit.setEnabled(True)
             self.neg_prompt_edit.setPlaceholderText("描述不希望出现的内容...")
@@ -922,6 +989,8 @@ class ImageEditWidget(QWidget):
         n = self.n_spinbox.value()
         negative_prompt = self.neg_prompt_edit.toPlainText().strip()
         size = self.size_combo.currentData()  # 获取输出尺寸
+        enable_interleave = self.interleave_checkbox.isChecked()  # 图文混合模式
+        max_images = self.max_images_spinbox.value()  # 最大图片数量
         
         # 获取输出文件夹
         project = self.project_manager.get_current_project()
@@ -941,7 +1010,9 @@ class ImageEditWidget(QWidget):
             negative_prompt,
             True,  # prompt_extend
             output_folder,
-            size  # 输出尺寸
+            size,  # 输出尺寸
+            enable_interleave,  # 图文混合模式
+            max_images  # 最大图片数量
         )
         self.worker.finished.connect(self.on_edit_finished)
         self.worker.error.connect(self.on_edit_error)

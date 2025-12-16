@@ -151,7 +151,8 @@ class DashScopeClient:
             raise Exception(f"下载视频失败: {str(e)}")
     
     def submit_image_edit(self, images: list, prompt: str, model: str = 'qwen-image-edit-plus',
-                         n: int = 2, negative_prompt: str = "", prompt_extend: bool = True, size: str = "") -> Dict:
+                         n: int = 2, negative_prompt: str = "", prompt_extend: bool = True, size: str = "",
+                         enable_interleave: bool = False, max_images: int = 5) -> Dict:
         """
         提交图像编辑任务（单图编辑或多图融合）
         
@@ -171,7 +172,7 @@ class DashScopeClient:
         
         if is_wanxiang:
             # 万相2.5/2.6使用异步API
-            return self._submit_wanxiang_image_edit(images, prompt, model, n, prompt_extend, size)
+            return self._submit_wanxiang_image_edit(images, prompt, model, n, prompt_extend, size, enable_interleave, max_images)
         else:
             # 其他模型使用同步API
             return self._submit_qwen_image_edit(images, prompt, model, n, negative_prompt, prompt_extend)
@@ -245,7 +246,8 @@ class DashScopeClient:
             )
     
     def _submit_wanxiang_image_edit(self, images: list, prompt: str, model: str,
-                                   n: int, prompt_extend: bool, size: str = "") -> Dict:
+                                   n: int, prompt_extend: bool, size: str = "",
+                                   enable_interleave: bool = False, max_images: int = 5) -> Dict:
         """提交万相图像编辑任务（异步，支持2.5和2.6）"""
         # 准备图片URL列表
         image_urls = []
@@ -287,17 +289,25 @@ class DashScopeClient:
                     ]
                 },
                 "parameters": {
-                    "n": n,
-                    "prompt_extend": prompt_extend,
+                    "n": n if not enable_interleave else 1,  # 图文混合模式下n固定为1
                     "watermark": False
                 }
             }
+            
+            # 添加prompt_extend参数（仅在非图文混合模式下生效）
+            if not enable_interleave:
+                payload["parameters"]["prompt_extend"] = prompt_extend
             
             # 添加size参数（如果指定）
             if size:
                 payload["parameters"]["size"] = size
             else:
                 payload["parameters"]["size"] = "1280*1280"  # 默认尺寸
+            
+            # 添加图文混合参数
+            if enable_interleave:
+                payload["parameters"]["enable_interleave"] = True
+                payload["parameters"]["max_images"] = max_images
             
             # 万相2.6使用新接口
             url = f'{self.base_url}/services/aigc/image-generation/generation'
