@@ -162,39 +162,43 @@ class ProjectExplorer(QWidget):
             is_image_folder = "图集" in folder_name
             is_video_folder = "视频集" in folder_name
             
+            # 定义支持的文件类型
+            image_extensions = ('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.webp')
+            video_extensions = ('.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv')
+            
             for item_name in items:
                 item_path = os.path.join(folder_path, item_name)
                 
                 if os.path.isfile(item_path):
-                    # 根据文件夹类型过滤文件
-                    if item_path.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        # 图片文件
-                        if not is_image_folder:
-                            continue  # 视频集中跳过图片
-                        
-                        file_item = QTreeWidgetItem(parent_item)
-                        # 使用缩略图
-                        thumbnail = self.create_thumbnail(item_path)
-                        if thumbnail:
-                            file_item.setIcon(0, QIcon(thumbnail))
-                        file_item.setText(0, item_name)
-                        file_item.setData(0, Qt.UserRole, item_path)
-                        
-                    elif item_path.lower().endswith('.mp4'):
-                        # 视频文件
-                        if not is_video_folder:
-                            continue  # 图集中跳过视频
-                        
-                        file_item = QTreeWidgetItem(parent_item)
-                        # 使用视频预览图
-                        thumbnail = self.create_video_thumbnail(item_path)
-                        if thumbnail:
-                            file_item.setIcon(0, QIcon(thumbnail))
+                    ext_lower = item_path.lower()
+                    
+                    # 图集只显示图片文件
+                    if is_image_folder:
+                        if ext_lower.endswith(image_extensions):
+                            file_item = QTreeWidgetItem(parent_item)
+                            # 使用缩略图
+                            thumbnail = self.create_thumbnail(item_path)
+                            if thumbnail:
+                                file_item.setIcon(0, QIcon(thumbnail))
                             file_item.setText(0, item_name)
-                        else:
-                            # 没有缩略图时显示视频emoji
-                            file_item.setText(0, f"🎬 {item_name}")
-                        file_item.setData(0, Qt.UserRole, item_path)
+                            file_item.setData(0, Qt.UserRole, item_path)
+                        # 跳过所有非图片文件
+                        
+                    # 视频集只显示视频文件
+                    elif is_video_folder:
+                        if ext_lower.endswith(video_extensions):
+                            file_item = QTreeWidgetItem(parent_item)
+                            # 使用视频预览图
+                            thumbnail = self.create_video_thumbnail(item_path)
+                            if thumbnail:
+                                file_item.setIcon(0, QIcon(thumbnail))
+                                file_item.setText(0, item_name)
+                            else:
+                                # 没有缩略图时显示视频emoji
+                                file_item.setText(0, f"🎬 {item_name}")
+                            file_item.setData(0, Qt.UserRole, item_path)
+                        # 跳过所有非视频文件
+                        
         except Exception as e:
             print(f"加载文件夹失败: {e}")
     
@@ -416,17 +420,27 @@ class ProjectExplorer(QWidget):
         # 判断文件类型
         ext = os.path.splitext(file_path)[1].lower()
         
-        if ext in ['.png', '.jpg', '.jpeg']:
-            # 图片文件复制到 inputs 文件夹
+        # 定义支持的文件类型
+        image_extensions = ['.png', '.jpg', '.jpeg', '.bmp', '.gif', '.webp']
+        video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv']
+        
+        if ext in image_extensions:
+            # 图片文件只能复制到 inputs 文件夹（图集）
             dest_folder = self.current_project.inputs_folder
             file_type = "图片"
-        elif ext in ['.mp4', '.avi', '.mov']:
-            # 视频文件复制到 outputs 文件夹
+        elif ext in video_extensions:
+            # 视频文件只能复制到 outputs 文件夹（视频集）
             dest_folder = self.current_project.outputs_folder
             file_type = "视频"
         else:
             if show_message:
-                QMessageBox.warning(self, "提示", f"不支持的文件类型: {ext}\n\n支持的格式：\n图片: .png, .jpg, .jpeg\n视频: .mp4, .avi, .mov")
+                QMessageBox.warning(
+                    self, 
+                    "不支持的文件类型", 
+                    f"文件类型 {ext} 不支持\n\n"
+                    f"支持的图片格式: {', '.join(image_extensions)}\n"
+                    f"支持的视频格式: {', '.join(video_extensions)}"
+                )
             return 'failed'
         
         try:
@@ -448,13 +462,14 @@ class ProjectExplorer(QWidget):
             shutil.copy2(file_path, dest_path)
             
             if show_message:
-                QMessageBox.information(self, "成功", f"{file_type}文件已导入到工程")
+                folder_name = "图集" if ext in image_extensions else "视频集"
+                QMessageBox.information(self, "导入成功", f"{file_type}文件已导入到 {folder_name}")
             
             return 'success'
             
         except Exception as e:
             if show_message:
-                QMessageBox.critical(self, "错误", f"导入失败: {str(e)}")
+                QMessageBox.critical(self, "导入失败", f"无法导入文件: {str(e)}")
             return 'failed'
     
     def show_context_menu(self, position):

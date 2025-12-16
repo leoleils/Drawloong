@@ -156,9 +156,18 @@ cp .env.example .env
 
 > 💡 **说明**：
 > - `pictures/` - 存放输入的图片素材，在资源管理器中显示为"图集"
+>   - 支持格式：.png, .jpg, .jpeg, .bmp, .gif, .webp
+>   - 只显示图片文件，视频文件会被自动过滤
 > - `videos/` - 存放生成的视频文件，在资源管理器中显示为"视频集"
+>   - 支持格式：.mp4, .avi, .mov, .mkv, .flv, .wmv
+>   - 只显示视频文件，图片文件会被自动过滤
 > - `project.json` - 保存工程的配置信息
 > - `tasks.json` - 记录该工程的所有任务历史
+
+> 🎯 **文件类型控制**：
+> - 拖拽导入时，图片文件自动添加到图集，视频文件自动添加到视频集
+> - 资源管理器会自动过滤不匹配的文件类型，确保图集只显示图片，视频集只显示视频
+> - 视频文件会显示第一帧作为预览缩略图
 
 ### 功能使用
 
@@ -291,12 +300,20 @@ pyinstaller wanx.spec
 | [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) | GPL-3.0 | GUI 框架 |
 | [requests](https://requests.readthedocs.io/) | Apache-2.0 | 网络请求 |
 | [python-dotenv](https://github.com/theskumar/python-dotenv) | BSD-3-Clause | 环境变量 |
+| [opencv-python](https://github.com/opencv/opencv-python) | MIT | 视频缩略图生成 |
 
 详见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE) 文件。
 
 ---
 
 ## 📈 更新日志
+
+### v1.15.2 (2025-12-16)
+- 🎯 图集和视频集严格文件类型控制
+- 📁 图集只能添加和显示图片文件（.png, .jpg, .jpeg, .bmp, .gif, .webp）
+- 🎬 视频集只能添加和显示视频文件（.mp4, .avi, .mov, .mkv, .flv, .wmv）
+- 🖼️ 拖拽导入时自动识别文件类型并放入正确的文件夹
+- 📦 添加 opencv-python 依赖用于视频缩略图生成
 
 ### v1.14.0 (2025-12-15)
 - 🌟 新增万相2.6模型支持（最新模型）
