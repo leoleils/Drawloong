@@ -644,8 +644,24 @@ class TextToImageWidget(QWidget):
     
     # 模型配置（包含分辨率约束）
     MODEL_CONFIG = {
+        'wan2.6-t2i': {
+            'name': '🌟 万相2.6（最新）',
+            'default_size': '1280*1280',
+            'description': '最新模型，总像素[768², 1440²]，宽高比[1:4, 4:1]，PNG格式',
+            'size_type': 'flexible',  # 灵活分辨率
+            'presets': [
+                '1:1 (1280*1280)',
+                '1:1 (1024*1024)',
+                '16:9 (1440*810)',
+                '9:16 (810*1440)',
+                '4:3 (1248*936)',
+                '3:4 (936*1248)',
+                '2:1 (1440*720)',
+                '1:2 (720*1440)'
+            ]
+        },
         'wan2.5-t2i-preview': {
-            'name': '万相2.5 Preview（推荐）',
+            'name': '万相2.5 Preview',
             'default_size': '1280*1280',
             'description': '支持灵活分辨率，总像素[768², 1440²]，宽高比[1:4, 4:1]',
             'size_type': 'flexible',  # 灵活分辨率
@@ -792,9 +808,10 @@ class TextToImageWidget(QWidget):
         
         self.model_combo = QComboBox()
         # 万相模型（推荐）
-        self.model_combo.addItem("🌟 万相2.5 Preview（推荐）", "wan2.5-t2i-preview")
-        self.model_combo.addItem("🌟 万相2.2 极速版（推荐）", "wan2.2-t2i-flash")
-        self.model_combo.addItem("🌟 万相2.2 专业版（推荐）", "wan2.2-t2i-plus")
+        self.model_combo.addItem("🌟 万相2.6（最新）", "wan2.6-t2i")
+        self.model_combo.addItem("万相2.5 Preview", "wan2.5-t2i-preview")
+        self.model_combo.addItem("万相2.2 极速版", "wan2.2-t2i-flash")
+        self.model_combo.addItem("万相2.2 专业版", "wan2.2-t2i-plus")
         # 通义千问模型
         self.model_combo.addItem("通义千问Plus", "qwen-image-plus")
         self.model_combo.addItem("通义千问标准版", "qwen-image")
