@@ -24,7 +24,7 @@ class ImageEditWorker(QThread):
     error = pyqtSignal(str)  # error_message
     progress = pyqtSignal(str)  # status_message
     
-    def __init__(self, api_client, images, prompt, model, n, negative_prompt, prompt_extend, output_folder):
+    def __init__(self, api_client, images, prompt, model, n, negative_prompt, prompt_extend, output_folder, size=""):
         super().__init__()
         self.api_client = api_client
         self.images = images
@@ -34,6 +34,7 @@ class ImageEditWorker(QThread):
         self.negative_prompt = negative_prompt
         self.prompt_extend = prompt_extend
         self.output_folder = output_folder
+        self.size = size  # 输出尺寸
     
     def run(self):
         """执行图像编辑任务"""
@@ -66,7 +67,8 @@ class ImageEditWorker(QThread):
             model=self.model,
             n=self.n,
             negative_prompt=self.negative_prompt,
-            prompt_extend=self.prompt_extend
+            prompt_extend=self.prompt_extend,
+            size=self.size
         )
         
         # 2. 检查响应
@@ -108,7 +110,8 @@ class ImageEditWorker(QThread):
             model=self.model,
             n=self.n,
             negative_prompt=self.negative_prompt,
-            prompt_extend=self.prompt_extend
+            prompt_extend=self.prompt_extend,
+            size=self.size
         )
         
         # 2. 检查响应
@@ -616,6 +619,29 @@ class ImageEditWidget(QWidget):
         
         group_layout.addLayout(n_layout)
         
+        # 输出尺寸（仅万相2.5/2.6显示）
+        size_label = QLabel("输出尺寸:")
+        size_label.setStyleSheet("font-weight: bold;")
+        self.size_label = size_label
+        group_layout.addWidget(size_label)
+        
+        self.size_combo = QComboBox()
+        self.size_combo.addItem("默认（不指定）", "")
+        self.size_combo.addItem("1:1 (1280×1280)", "1280*1280")
+        self.size_combo.addItem("1:1 (1024×1024)", "1024*1024")
+        self.size_combo.addItem("2:3 (800×1200)", "800*1200")
+        self.size_combo.addItem("3:2 (1200×800)", "1200*800")
+        self.size_combo.addItem("3:4 (960×1280)", "960*1280")
+        self.size_combo.addItem("4:3 (1280×960)", "1280*960")
+        self.size_combo.addItem("9:16 (720×1280)", "720*1280")
+        self.size_combo.addItem("16:9 (1280×720)", "1280*720")
+        self.size_combo.addItem("21:9 (1344×576)", "1344*576")
+        group_layout.addWidget(self.size_combo)
+        
+        # 默认隐藏尺寸选择（仅万相模型显示）
+        self.size_label.hide()
+        self.size_combo.hide()
+        
         # 生成按钮
         self.generate_btn = QPushButton("开始编辑")
         self.generate_btn.setStyleSheet("""
@@ -666,10 +692,26 @@ class ImageEditWidget(QWidget):
     def on_model_changed(self, index):
         """模型改变事件"""
         model = self.model_combo.itemData(index)
+        
+        # 判断是否为万相模型
+        is_wanxiang = model and (model.startswith('wan2.') or model == 'wan2.6-image')
+        
         if model == 'wan2.6-image':
             self.model_desc_label.setText("🌟 万相2.6模型：最新模型，支持参考图生图、图文混合输出，异步处理")
+            # 显示尺寸选择
+            self.size_label.show()
+            self.size_combo.show()
         elif model and model.startswith('wan2.5'):
             self.model_desc_label.setText("万相2.5模型：支持单图编辑和多图融合，异步处理，效果更优")
+            # 显示尺寸选择
+            self.size_label.show()
+            self.size_combo.show()
+        else:
+            # 通义千问模型
+            self.model_desc_label.setText("通义千问模型：同步处理，快速响应")
+            # 隐藏尺寸选择
+            self.size_label.hide()
+            self.size_combo.hide()
             # 万相2.5不支持反向提示词
             self.neg_prompt_edit.setEnabled(False)
             self.neg_prompt_edit.setPlaceholderText("此模型不支持反向提示词")
@@ -875,6 +917,7 @@ class ImageEditWidget(QWidget):
         model = self.model_combo.currentData()
         n = self.n_spinbox.value()
         negative_prompt = self.neg_prompt_edit.toPlainText().strip()
+        size = self.size_combo.currentData()  # 获取输出尺寸
         
         # 获取输出文件夹
         project = self.project_manager.get_current_project()
@@ -893,7 +936,8 @@ class ImageEditWidget(QWidget):
             n,
             negative_prompt,
             True,  # prompt_extend
-            output_folder
+            output_folder,
+            size  # 输出尺寸
         )
         self.worker.finished.connect(self.on_edit_finished)
         self.worker.error.connect(self.on_edit_error)
