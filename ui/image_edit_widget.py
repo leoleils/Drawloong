@@ -146,15 +146,32 @@ class ImageEditWorker(QThread):
                 task_status = task_result['output'].get('task_status', '')
                 
                 if task_status == 'SUCCEEDED':
-                    # 任务成功
-                    results = task_result['output'].get('results', [])
-                    if results and len(results) > 0:
-                        image_urls = [r.get('url', '') for r in results if r.get('url')]
-                        if image_urls:
-                            self._download_images(image_urls)
-                            return
-                    self.error.emit("任务成功但未获取到图片")
-                    return
+                    # 任务成功，提取图片URL
+                    image_urls = []
+                    
+                    # 尝试从choices中提取（万相2.6格式）
+                    if 'choices' in task_result['output']:
+                        choices = task_result['output']['choices']
+                        for choice in choices:
+                            if 'message' in choice and 'content' in choice['message']:
+                                content = choice['message']['content']
+                                for item in content:
+                                    if 'image' in item:
+                                        image_urls.append(item['image'])
+                    
+                    # 尝试从results中提取（旧格式）
+                    elif 'results' in task_result['output']:
+                        results = task_result['output']['results']
+                        for r in results:
+                            if 'url' in r:
+                                image_urls.append(r['url'])
+                    
+                    if image_urls:
+                        self._download_images(image_urls)
+                        return
+                    else:
+                        self.error.emit("任务成功但未获取到图片")
+                        return
                 
                 elif task_status == 'FAILED':
                     error_code = task_result['output'].get('code', '')
@@ -184,6 +201,7 @@ class ImageEditWorker(QThread):
         
         self.progress.emit(f"正在下载{len(image_urls)}张图片...")
         downloaded_paths = []
+        errors = []
         
         for i, url in enumerate(image_urls):
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -191,16 +209,31 @@ class ImageEditWorker(QThread):
             output_path = os.path.join(self.output_folder, filename)
             
             try:
+                self.progress.emit(f"下载图片 {i+1}/{len(image_urls)}...")
+                print(f"正在下载图片: {url}")
+                
                 img_response = requests.get(url, timeout=30)
+                img_response.raise_for_status()  # 检查HTTP错误
+                
                 with open(output_path, 'wb') as f:
                     f.write(img_response.content)
+                
                 downloaded_paths.append(output_path)
+                print(f"图片{i+1}下载成功: {output_path}")
+                
             except Exception as e:
-                print(f"下载图片{i+1}失败: {e}")
+                error_msg = f"图片{i+1}下载失败: {str(e)}"
+                print(error_msg)
+                errors.append(error_msg)
         
         if not downloaded_paths:
-            self.error.emit("所有图片下载失败")
+            error_detail = "\n".join(errors) if errors else "未知错误"
+            self.error.emit(f"所有图片下载失败:\n{error_detail}")
             return
+        
+        if errors:
+            # 部分成功
+            self.progress.emit(f"成功下载{len(downloaded_paths)}/{len(image_urls)}张图片")
         
         # 构建编辑信息
         edit_info = {
