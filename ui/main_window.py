@@ -27,6 +27,7 @@ from .video_viewer import VideoViewerWidget
 from .text_to_image_widget import TextToImageWidget
 from .image_edit_widget import ImageEditWidget
 from .keyframe_to_video_widget import KeyframeToVideoWidget
+from .reference_video_to_video_widget import ReferenceVideoToVideoWidget
 from core.task_manager import TaskManager
 from core.api_client import DashScopeClient
 from core.project_manager import ProjectManager
@@ -214,6 +215,10 @@ class MainWindow(QMainWindow):
         # 标签页 4:图像编辑(已实现)
         self.image_edit_tab = ImageEditWidget(self.api_client, self.project_manager)
         self.tab_widget.addTab(self.image_edit_tab, "图像编辑")
+        
+        # 标签页 5:参考生视频
+        self.reference_video_tab = ReferenceVideoToVideoWidget(self.api_client, self.project_manager, self.task_manager)
+        self.tab_widget.addTab(self.reference_video_tab, "参考生视频")
         
         content_layout.addWidget(self.tab_widget)
         main_splitter.addWidget(content_widget)

@@ -21,7 +21,7 @@ class DashScopeClient:
         self.api_key = settings.get_api_key()
         self.base_url = settings.DASHSCOPE_BASE_URL
     
-    def _get_headers(self, async_mode=False):
+    def _get_headers(self, async_mode=False, oss_resource_resolve=False):
         """获取请求头"""
         headers = {
             'Authorization': f'Bearer {self.api_key}',
@@ -29,6 +29,8 @@ class DashScopeClient:
         }
         if async_mode:
             headers['X-DashScope-Async'] = 'enable'
+        if oss_resource_resolve:
+            headers['X-DashScope-OssResourceResolve'] = 'enable'
         return headers
     
     def submit_task(self, image_path: str, prompt: str, model: str, 
@@ -352,6 +354,120 @@ class DashScopeClient:
     def query_image_edit_task(self, task_id: str) -> Dict:
         """查询图像编辑任务状态"""
         return self.query_task(task_id)
+    
+    def upload_video_and_get_url(self, video_path: str, model_name: str) -> str:
+        """
+        上传视频文件并获取临时URL
+        
+        Args:
+            video_path: 视频文件路径
+            model_name: 模型名称
+            
+        Returns:
+            临时HTTP URL
+        """
+        from pathlib import Path
+        
+        # 1. 获取上传凭证
+        url = f"{self.base_url}/uploads"
+        headers = self._get_headers()
+        params = {
+            "action": "getPolicy",
+            "model": model_name
+        }
+        
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code != 200:
+            raise Exception(f"获取上传凭证失败: {response.text}")
+        
+        policy_data = response.json()['data']
+        
+        # 2. 上传文件到OSS
+        file_name = Path(video_path).name
+        key = f"{policy_data['upload_dir']}/{file_name}"
+        
+        with open(video_path, 'rb') as file:
+            files = {
+                'OSSAccessKeyId': (None, policy_data['oss_access_key_id']),
+                'Signature': (None, policy_data['signature']),
+                'policy': (None, policy_data['policy']),
+                'x-oss-object-acl': (None, policy_data['x_oss_object_acl']),
+                'x-oss-forbid-overwrite': (None, policy_data['x_oss_forbid_overwrite']),
+                'key': (None, key),
+                'success_action_status': (None, '200'),
+                'file': (file_name, file)
+            }
+            response = requests.post(policy_data['upload_host'], files=files)
+            if response.status_code != 200:
+                raise Exception(f"上传文件失败: {response.text}")
+        
+        # 3. 返回oss://格式的URL
+        # API服务端会自己处理OSS访问权限
+        # 不需要转换为HTTP URL，因为HTTP URL可能没有访问权限
+        oss_url = f"oss://{key}"
+        
+        return oss_url
+    
+    def submit_reference_video_to_video(self, reference_video_urls: list, prompt: str,
+                                       negative_prompt: str = "", size: str = "1920*1080",
+                                       duration: int = 5, shot_type: str = "single",
+                                       audio: bool = True, seed: int = None) -> Dict:
+        """
+        提交参考生视频任务
+        
+        Args:
+            reference_video_urls: 参考视频URL列表（1-2个）
+            prompt: 提示词
+            negative_prompt: 反向提示词
+            size: 分辨率（如 1280*720）
+            duration: 视频时长（5或10秒）
+            shot_type: 镜头类型（single/multi）
+            audio: 是否包含音频
+            seed: 随机种子
+            
+        Returns:
+            API 响应数据
+        """
+        # 准备请求数据
+        payload = {
+            "model": "wan2.6-r2v",
+            "input": {
+                "prompt": prompt,
+                "reference_video_urls": reference_video_urls
+            },
+            "parameters": {
+                "size": size,
+                "duration": duration,
+                "audio": audio,
+                "shot_type": shot_type
+            }
+        }
+        
+        # 添加反向提示词
+        if negative_prompt:
+            payload["input"]["negative_prompt"] = negative_prompt
+        
+        # 添加随机种子
+        if seed is not None:
+            payload["parameters"]["seed"] = seed
+        
+        # 发送异步请求
+        # 使用oss://格式的URL时，需要启用OSS资源解析
+        response = requests.post(
+            f'{self.base_url}/services/aigc/video-generation/video-synthesis',
+            headers=self._get_headers(async_mode=True, oss_resource_resolve=True),
+            data=json.dumps(payload),
+            timeout=60
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            error_data = response.json() if response.content else {}
+            raise Exception(
+                f"API 调用失败: {error_data.get('message', '未知错误')} "
+                f"(状态码: {response.status_code})"
+            )
     
     def submit_keyframe_to_video(self, first_frame_url: str, last_frame_url: str,
                                 prompt: str, model: str = 'wan2.2-kf2v-flash',

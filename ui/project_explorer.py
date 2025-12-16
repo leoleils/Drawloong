@@ -307,8 +307,9 @@ class ProjectExplorer(QWidget):
         if not file_path or not os.path.isfile(file_path):
             return
         
-        # 只允许拖拽图片文件
-        if not file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+        # 允许拖拽图片和视频文件
+        allowed_extensions = ('.png', '.jpg', '.jpeg', '.mp4', '.mov')
+        if not file_path.lower().endswith(allowed_extensions):
             return
         
         # 创建拖拽对象
@@ -320,7 +321,13 @@ class ProjectExplorer(QWidget):
         drag.setMimeData(mime_data)
         
         # 设置拖拽时显示的缩略图
-        thumbnail = self.create_thumbnail(file_path)
+        if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            thumbnail = self.create_thumbnail(file_path)
+        elif file_path.lower().endswith(('.mp4', '.mov')):
+            thumbnail = self.create_video_thumbnail(file_path)
+        else:
+            thumbnail = None
+        
         if thumbnail:
             drag.setPixmap(thumbnail)
             drag.setHotSpot(thumbnail.rect().center())

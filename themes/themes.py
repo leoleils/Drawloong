@@ -14,7 +14,7 @@ class Themes:
     QWidget {
         background-color: #ffffff;
         color: #333333;
-        font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "SimHei", Arial, sans-serif;
         font-size: 13px;
     }
     
@@ -168,7 +168,7 @@ class Themes:
     QWidget {
         background-color: #1e1e1e;
         color: #e0e0e0;
-        font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "SimHei", Arial, sans-serif;
         font-size: 13px;
     }
     
@@ -351,7 +351,7 @@ class Themes:
     QWidget {
         background-color: #f0f4f8;
         color: #1a365d;
-        font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "SimHei", Arial, sans-serif;
         font-size: 13px;
     }
     
@@ -464,7 +464,7 @@ class Themes:
     QWidget {
         background-color: #f0fdf4;
         color: #14532d;
-        font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "SimHei", Arial, sans-serif;
         font-size: 13px;
     }
     

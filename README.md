@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.14.0-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.15.0-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
@@ -32,22 +32,27 @@
 
 <table>
   <tr>
-    <td align="center" width="25%">
+    <td align="center" width="20%">
       <img src="https://img.icons8.com/fluency/96/video.png" width="48"><br>
       <b>🎬 首帧生视频</b><br>
       <sub>单张图片生成动态视频</sub>
     </td>
-    <td align="center" width="25%">
+    <td align="center" width="20%">
       <img src="https://img.icons8.com/fluency/96/transition.png" width="48"><br>
       <b>🔄 首尾帧生视频</b><br>
       <sub>两帧图片生成过渡动画</sub>
     </td>
-    <td align="center" width="25%">
+    <td align="center" width="20%">
+      <img src="https://img.icons8.com/fluency/96/video-playlist.png" width="48"><br>
+      <b>🎥 参考生视频</b><br>
+      <sub>参考视频生成新场景</sub>
+    </td>
+    <td align="center" width="20%">
       <img src="https://img.icons8.com/fluency/96/paint-palette.png" width="48"><br>
       <b>🎨 文生图</b><br>
       <sub>文字描述生成图片</sub>
     </td>
-    <td align="center" width="25%">
+    <td align="center" width="20%">
       <img src="https://img.icons8.com/fluency/96/edit-image.png" width="48"><br>
       <b>✂️ 图像编辑</b><br>
       <sub>AI智能修图与融合</sub>
@@ -161,6 +166,7 @@ cp .env.example .env
 |------|----------|
 | **首帧生视频** | 上传图片 → 填写提示词 → 选择模型/分辨率 → 生成 |
 | **首尾帧生视频** | 上传首帧+尾帧 → 描述过渡效果 → 生成动画 |
+| **参考生视频** | 上传参考视频 → 使用character1/2描述 → 生成新场景 |
 | **文生图** | 输入文字描述 → 选择风格/尺寸 → 生成图片 |
 | **图像编辑** | 上传图片 → 输入编辑指令 → AI处理 |
 
@@ -192,7 +198,8 @@ drawloong/
 │   ├── video_viewer.py    # 视频浏览器
 │   ├── text_to_image_widget.py      # 文生图
 │   ├── image_edit_widget.py         # 图像编辑
-│   └── keyframe_to_video_widget.py  # 首尾帧生视频
+│   ├── keyframe_to_video_widget.py  # 首尾帧生视频
+│   └── reference_video_to_video_widget.py  # 参考生视频
 │
 └── themes/                # 🎭 主题配置
     └── themes.py

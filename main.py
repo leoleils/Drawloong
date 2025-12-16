@@ -5,7 +5,7 @@
 基于 PyQt5 的桌面客户端，调用阿里云 DashScope API 实现图片转视频功能
 """
 
-__version__ = "1.14.0"
+__version__ = "1.15.0"
 
 import sys
 import os
