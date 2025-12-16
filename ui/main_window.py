@@ -663,9 +663,9 @@ class MainWindow(QMainWindow):
     
     def switch_to_project(self, project):
         """切换到工程工作区"""
-        # 调整窗口大小为工作区尺寸（适配13.3寸1920×1080屏幕）
-        self.setMinimumSize(1200, 700)
-        self.resize(1600, 900)
+        # 调整窗口大小为工作区尺寸（适配13寸16:10 1280×800屏幕）
+        self.setMinimumSize(1000, 600)
+        self.resize(1200, 750)
         self.center_window()  # 居中显示
         
         # 显示菜单栏和状态栏
