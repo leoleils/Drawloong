@@ -57,13 +57,18 @@ class SplashScreen(QWidget):
         self.media_player.mediaStatusChanged.connect(self.on_media_status_changed)
         self.media_player.error.connect(self.on_error)
     
+    def get_resource_path(self, relative_path):
+        """获取资源文件的绝对路径（支持打包后的路径）"""
+        import sys
+        if hasattr(sys, '_MEIPASS'):
+            # PyInstaller 打包后的路径
+            return os.path.join(sys._MEIPASS, relative_path)
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), relative_path)
+    
     def play(self):
         """播放开机动画"""
-        # 获取动画视频路径
-        video_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            'launch_animation.mp4'
-        )
+        # 获取动画视频路径（支持打包后的路径）
+        video_path = self.get_resource_path('launch_animation.mp4')
         
         if not os.path.exists(video_path):
             print(f"开机动画文件不存在: {video_path}")

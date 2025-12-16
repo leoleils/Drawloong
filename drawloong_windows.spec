@@ -21,6 +21,10 @@ if os.path.exists('logo.png'):
 if os.path.exists('welcome.png'):
     datas.append(('welcome.png', '.'))
 
+# 添加开机动画视频
+if os.path.exists('launch_animation.mp4'):
+    datas.append(('launch_animation.mp4', '.'))
+
 # 添加主题文件夹
 if os.path.exists('themes'):
     datas.append(('themes', 'themes'))

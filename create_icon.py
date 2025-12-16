@@ -37,9 +37,9 @@ def create_ico_from_png(png_path, ico_path):
             (256, 256),
         ]
         
-        # 创建不同尺寸的图标
+        # 创建不同尺寸的图标（从大到小排序）
         icons = []
-        for size in sizes:
+        for size in reversed(sizes):
             # 使用高质量缩放
             resized = img.resize(size, Image.Resampling.LANCZOS)
             icons.append(resized)
@@ -49,7 +49,6 @@ def create_ico_from_png(png_path, ico_path):
         icons[0].save(
             ico_path,
             format='ICO',
-            sizes=[(icon.width, icon.height) for icon in icons],
             append_images=icons[1:]
         )
         
