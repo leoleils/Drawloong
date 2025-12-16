@@ -1,12 +1,13 @@
 # UTF-8
 #
-# Windows 版本信息文件
-# 用于 PyInstaller 打包时添加版本信息
+# 烛龙绘影 Drawloong 版本信息
+# 用于 Windows 可执行文件属性
+#
 
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 14, 0, 0),
-    prodvers=(1, 14, 0, 0),
+    filevers=(1, 15, 1, 0),
+    prodvers=(1, 15, 1, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -17,18 +18,21 @@ VSVersionInfo(
   kids=[
     StringFileInfo(
       [
-      StringTable(
-        u'040904B0',
-        [StringStruct(u'CompanyName', u'Drawloong Team'),
-        StringStruct(u'FileDescription', u'烛龙绘影 - AI图像视频生成应用'),
-        StringStruct(u'FileVersion', u'1.14.0'),
-        StringStruct(u'InternalName', u'Drawloong'),
-        StringStruct(u'LegalCopyright', u'Copyright (C) 2025 Drawloong Team'),
-        StringStruct(u'OriginalFilename', u'Drawloong.exe'),
-        StringStruct(u'ProductName', u'烛龙绘影 Drawloong'),
-        StringStruct(u'ProductVersion', u'1.14.0')])
+        StringTable(
+          u'080404b0',
+          [
+            StringStruct(u'CompanyName', u'Drawloong Team'),
+            StringStruct(u'FileDescription', u'烛龙绘影 - AI视频生成工具'),
+            StringStruct(u'FileVersion', u'1.15.1.0'),
+            StringStruct(u'InternalName', u'Drawloong'),
+            StringStruct(u'LegalCopyright', u'Copyright (C) 2025 Drawloong Team'),
+            StringStruct(u'OriginalFilename', u'Drawloong.exe'),
+            StringStruct(u'ProductName', u'烛龙绘影 Drawloong'),
+            StringStruct(u'ProductVersion', u'1.15.1.0'),
+          ]
+        )
       ]
     ),
-    VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
+    VarFileInfo([VarStruct(u'Translation', [2052, 1200])])
   ]
 )

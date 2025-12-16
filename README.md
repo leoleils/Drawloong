@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.15.0-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.15.1-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
