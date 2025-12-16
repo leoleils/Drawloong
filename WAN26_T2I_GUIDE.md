@@ -20,20 +20,27 @@ model: "wan2.6-t2i"
 
 ### API接口
 
-**重要变更**：万相2.6使用新的API接口
-
+**异步调用接口**（当前使用）：
 ```
-旧接口（2.5及以下）：
 https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis
-
-新接口（2.6）：
-https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
 ```
 
-**请求格式变化**：
-- 2.6使用 `messages` 格式（类似对话）
-- 提示词放在 `messages[0].content[0].text` 中
-- 其他参数保持在 `parameters` 中
+**请求格式**：
+```json
+{
+  "model": "wan2.6-t2i",
+  "input": {
+    "prompt": "提示词"
+  },
+  "parameters": {
+    "size": "1280*1280",
+    "n": 1,
+    "prompt_extend": true
+  }
+}
+```
+
+> 💡 **说明**：万相2.6目前异步调用使用与2.5相同的接口和格式，调用方式完全一致
 
 ### 图像分辨率
 
