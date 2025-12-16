@@ -190,9 +190,10 @@ class ProjectExplorer(QWidget):
                         thumbnail = self.create_video_thumbnail(item_path)
                         if thumbnail:
                             file_item.setIcon(0, QIcon(thumbnail))
+                            file_item.setText(0, item_name)
                         else:
+                            # 没有缩略图时显示视频emoji
                             file_item.setText(0, f"🎬 {item_name}")
-                        file_item.setText(0, item_name)
                         file_item.setData(0, Qt.UserRole, item_path)
         except Exception as e:
             print(f"加载文件夹失败: {e}")
