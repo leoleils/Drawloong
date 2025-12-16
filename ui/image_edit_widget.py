@@ -679,6 +679,9 @@ class ImageEditWidget(QWidget):
         layout.addWidget(group_box)
         layout.addStretch()
         
+        # 初始化模型状态（触发一次on_model_changed）
+        self.on_model_changed(0)
+        
         return widget
     
     def on_mode_changed(self, index):
