@@ -49,6 +49,10 @@ build/
 dist/
 *.spec
 !wanx.spec
+!drawloong_windows.spec
+*.AppImage
+*.dmg
+*.zip
 
 # macOS
 .DS_Store

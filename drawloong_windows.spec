@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+# Windows 打包配置文件
 
 block_cipher = None
 
@@ -18,8 +19,11 @@ a = Analysis(
         'PyQt5.QtCore',
         'PyQt5.QtGui',
         'PyQt5.QtWidgets',
+        'PyQt5.QtMultimedia',
+        'PyQt5.QtMultimediaWidgets',
         'requests',
         'dotenv',
+        'cv2',
     ],
     hookspath=[],
     hooksconfig={},
@@ -43,13 +47,14 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console=False,  # 不显示控制台窗口
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='logo.icns',
+    icon='logo.ico',  # Windows 使用 .ico 图标
+    version='version_info.txt',  # Windows 版本信息
 )
 
 coll = COLLECT(
@@ -61,21 +66,4 @@ coll = COLLECT(
     upx=True,
     upx_exclude=[],
     name='Drawloong',
-)
-
-app = BUNDLE(
-    coll,
-    name='Drawloong.app',
-    icon='logo.icns',
-    bundle_identifier='com.zhulong.drawloong',
-    info_plist={
-        'NSPrincipalClass': 'NSApplication',
-        'NSAppleScriptEnabled': False,
-        'CFBundleName': 'Drawloong',
-        'CFBundleDisplayName': '烛龙绘影 Drawloong',
-        'CFBundleGetInfoString': "烛龙绘影 - AI图像视频生成应用",
-        'CFBundleVersion': "1.14.0",
-        'CFBundleShortVersionString': "1.14.0",
-        'NSHighResolutionCapable': 'True',
-    },
 )

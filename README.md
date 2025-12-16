@@ -202,18 +202,43 @@ drawloong/
 
 ## 📦 打包发布
 
+### Windows
+
+```batch
+# 使用打包脚本（推荐）
+build_windows.bat
+
+# 或手动打包
+pip install pyinstaller
+pyinstaller drawloong_windows.spec
+```
+
+输出：`dist\Drawloong\Drawloong.exe`
+
 ### macOS
 
 ```bash
+# 使用打包脚本（推荐）
+chmod +x build_mac.sh
 ./build_mac.sh
+
+# 或手动打包
+pip install pyinstaller
+pyinstaller wanx.spec
 ```
 
-### 通用打包
+输出：`dist/Drawloong.app`
+
+### Linux
 
 ```bash
 pip install pyinstaller
 pyinstaller wanx.spec
 ```
+
+输出：`dist/Drawloong/Drawloong`
+
+> 📚 **详细说明**：查看 [BUILD_GUIDE.md](BUILD_GUIDE.md) 获取完整的打包指南，包括代码签名、创建安装包、常见问题等
 
 ---
 
