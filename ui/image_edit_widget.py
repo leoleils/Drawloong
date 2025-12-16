@@ -701,22 +701,23 @@ class ImageEditWidget(QWidget):
             # 显示尺寸选择
             self.size_label.show()
             self.size_combo.show()
+            # 万相2.6不支持反向提示词
+            self.neg_prompt_edit.setEnabled(False)
+            self.neg_prompt_edit.setPlaceholderText("此模型不支持反向提示词")
         elif model and model.startswith('wan2.5'):
             self.model_desc_label.setText("万相2.5模型：支持单图编辑和多图融合，异步处理，效果更优")
             # 显示尺寸选择
             self.size_label.show()
             self.size_combo.show()
-        else:
-            # 通义千问模型
-            self.model_desc_label.setText("通义千问模型：同步处理，快速响应")
-            # 隐藏尺寸选择
-            self.size_label.hide()
-            self.size_combo.hide()
             # 万相2.5不支持反向提示词
             self.neg_prompt_edit.setEnabled(False)
             self.neg_prompt_edit.setPlaceholderText("此模型不支持反向提示词")
         else:
+            # 通义千问模型
             self.model_desc_label.setText("通义千问模型：支持单图编辑和多图融合，同步处理")
+            # 隐藏尺寸选择
+            self.size_label.hide()
+            self.size_combo.hide()
             # 通义千问支持反向提示词
             self.neg_prompt_edit.setEnabled(True)
             self.neg_prompt_edit.setPlaceholderText("描述不希望出现的内容...")
