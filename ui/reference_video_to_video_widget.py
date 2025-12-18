@@ -319,13 +319,6 @@ class ReferenceVideoToVideoWidget(QWidget):
         preview_widget = self.create_preview_panel()
         left_splitter.addWidget(preview_widget)
         
-        from .task_list import TaskListWidget
-        self.task_list = TaskListWidget(self.task_manager, self.project_manager)
-        left_splitter.addWidget(self.task_list)
-        
-        left_splitter.setStretchFactor(0, 2)
-        left_splitter.setStretchFactor(1, 1)
-        
         left_layout.addWidget(left_splitter)
         main_splitter.addWidget(left_widget)
         
@@ -804,9 +797,14 @@ class ReferenceVideoToVideoWidget(QWidget):
                 async_task_id=async_task_id,
                 status='RUNNING'
             )
-            # 刷新任务列表并开始监控
-            self.task_list.refresh_tasks()
-            self.task_list.start_monitoring_task(self.current_task.id)
+            # 刷新浮动任务列表并开始监控
+            main_window = self.window()
+            if hasattr(main_window, 'floating_task_list'):
+                main_window.floating_task_list.refresh_tasks()
+                main_window.floating_task_list.start_monitoring_task(self.current_task.id)
+                # 自动打开浮动任务列表
+                if not main_window.floating_task_list.is_drawer_visible():
+                    main_window.floating_task_list.show_drawer(main_window)
     
     def on_generate_finished(self, video_path, video_info):
         """生成完成"""
@@ -830,8 +828,9 @@ class ReferenceVideoToVideoWidget(QWidget):
         if hasattr(main_window, 'project_explorer'):
             main_window.project_explorer.refresh()
         
-        # 刷新任务列表
-        self.task_list.refresh_tasks()
+        # 刷新浮动任务列表
+        if hasattr(main_window, 'floating_task_list'):
+            main_window.floating_task_list.refresh_tasks()
         
         QMessageBox.information(
             self,
@@ -852,8 +851,10 @@ class ReferenceVideoToVideoWidget(QWidget):
                 status='FAILED',
                 error_message=error_msg
             )
-            # 刷新任务列表
-            self.task_list.refresh_tasks()
+            # 刷新浮动任务列表
+            main_window = self.window()
+            if hasattr(main_window, 'floating_task_list'):
+                main_window.floating_task_list.refresh_tasks()
         
         self.status_label.setStyleSheet("""
             QLabel {

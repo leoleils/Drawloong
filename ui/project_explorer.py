@@ -3,17 +3,29 @@
 """
 工程资源管理器
 类似 VSCode 的文件浏览器
+使用 QFluentWidgets 组件美化
 """
 
 import os
 import shutil
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QTreeWidget, QTreeWidgetItem, QMenu,
-    QMessageBox, QFileIconProvider, QInputDialog
+    QWidget, QVBoxLayout, QHBoxLayout,
+    QTreeWidgetItem, QFileIconProvider, QInputDialog, QApplication
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QFileInfo, QMimeData, QUrl, QSize
-from PyQt5.QtGui import QIcon, QDrag, QPixmap
+from PyQt5.QtCore import Qt, pyqtSignal, QMimeData, QUrl, QSize
+from PyQt5.QtGui import QDrag, QPixmap
+
+# 尝试导入 QFluentWidgets 组件
+try:
+    from qfluentwidgets import (
+        TreeWidget, RoundMenu, Action, FluentIcon,
+        ToolButton, SubtitleLabel, BodyLabel, MessageBox
+    )
+    FLUENT_AVAILABLE = True
+except ImportError:
+    FLUENT_AVAILABLE = False
+    from PyQt5.QtWidgets import QTreeWidget as TreeWidget, QMenu, QPushButton, QLabel, QMessageBox
+    print("警告: QFluentWidgets 未安装，将使用原生 PyQt5 组件")
 
 
 class ProjectExplorer(QWidget):
@@ -38,53 +50,68 @@ class ProjectExplorer(QWidget):
         """设置界面"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         
         # 标题栏
         header = QWidget()
         header_layout = QHBoxLayout(header)
+        # 统一标题栏内边距：10px 水平，5px 垂直
         header_layout.setContentsMargins(10, 5, 10, 5)
         
-        title_label = QLabel("资源管理器")
-        title_label.setStyleSheet("font-weight: bold; font-size: 13px;")
+        if FLUENT_AVAILABLE:
+            title_label = SubtitleLabel("资源管理器")
+        else:
+            title_label = QLabel("资源管理器")
+            title_label.setStyleSheet("font-weight: bold; font-size: 13px;")
         header_layout.addWidget(title_label)
         
         header_layout.addStretch()
         
         # 刷新按钮
-        refresh_btn = QPushButton("⟳")
-        refresh_btn.setFixedSize(24, 24)
-        refresh_btn.setToolTip("刷新")
-        refresh_btn.clicked.connect(self.refresh)
-        refresh_btn.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                border: none;
-                color: #666;
-                font-size: 16px;
-            }
-            QPushButton:hover {
-                background: #e9ecef;
-                border-radius: 4px;
-                color: #333;
-            }
-        """)
+        if FLUENT_AVAILABLE:
+            refresh_btn = ToolButton(FluentIcon.SYNC)
+            refresh_btn.setFixedSize(28, 28)
+            refresh_btn.setToolTip("刷新")
+            refresh_btn.clicked.connect(self.refresh)
+        else:
+            refresh_btn = QPushButton("⟳")
+            refresh_btn.setFixedSize(24, 24)
+            refresh_btn.setToolTip("刷新")
+            refresh_btn.clicked.connect(self.refresh)
+            refresh_btn.setStyleSheet("""
+                QPushButton {
+                    background: transparent;
+                    border: none;
+                    color: #666;
+                    font-size: 16px;
+                }
+                QPushButton:hover {
+                    background: #e9ecef;
+                    border-radius: 4px;
+                    color: #333;
+                }
+            """)
         header_layout.addWidget(refresh_btn)
         
         layout.addWidget(header)
         
         # 树形视图
-        self.tree = QTreeWidget()
+        self.tree = TreeWidget()
         self.tree.setHeaderHidden(True)
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self.show_context_menu)
         self.tree.itemDoubleClicked.connect(self.on_item_double_clicked)
         
-        # 设置图标大小以支持缩略图
-        self.tree.setIconSize(QSize(48, 48))
+        # 设置图标大小 - 使用较小的图标以节省空间
+        self.tree.setIconSize(QSize(24, 24))
         
         # 树形视图启用拖拽
         self.tree.setDragEnabled(True)
-        self.tree.setDragDropMode(QTreeWidget.DragOnly)
+        if FLUENT_AVAILABLE:
+            from PyQt5.QtWidgets import QAbstractItemView
+            self.tree.setDragDropMode(QAbstractItemView.DragOnly)
+        else:
+            self.tree.setDragDropMode(TreeWidget.DragOnly)
         
         # 连接拖拽开始信号
         self.tree.startDrag = self.start_drag
@@ -92,15 +119,19 @@ class ProjectExplorer(QWidget):
         layout.addWidget(self.tree)
         
         # 空状态提示
-        self.empty_label = QLabel("未打开工程\n\n请创建或打开工程")
-        self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("""
-            QLabel {
-                color: #999;
-                font-size: 14px;
-                padding: 20px;
-            }
-        """)
+        if FLUENT_AVAILABLE:
+            self.empty_label = BodyLabel("未打开工程\n\n请创建或打开工程")
+            self.empty_label.setAlignment(Qt.AlignCenter)
+        else:
+            self.empty_label = QLabel("未打开工程\n\n请创建或打开工程")
+            self.empty_label.setAlignment(Qt.AlignCenter)
+            self.empty_label.setStyleSheet("""
+                QLabel {
+                    color: #999;
+                    font-size: 14px;
+                    padding: 20px;
+                }
+            """)
         layout.addWidget(self.empty_label)
         
         # 默认显示空状态
@@ -132,18 +163,28 @@ class ProjectExplorer(QWidget):
         root = QTreeWidgetItem(self.tree)
         root.setText(0, self.current_project.name)
         root.setData(0, Qt.UserRole, self.current_project.path)
+        if FLUENT_AVAILABLE:
+            root.setIcon(0, FluentIcon.FOLDER.icon())
         root.setExpanded(True)
         
         # 添加 inputs 文件夹 (显示为图集)
         inputs_item = QTreeWidgetItem(root)
-        inputs_item.setText(0, "📁 图集")
+        if FLUENT_AVAILABLE:
+            inputs_item.setText(0, "图集")
+            inputs_item.setIcon(0, FluentIcon.PHOTO.icon())
+        else:
+            inputs_item.setText(0, "📁 图集")
         inputs_item.setData(0, Qt.UserRole, self.current_project.inputs_folder)
         inputs_item.setExpanded(True)  # 默认展开
         self.load_folder(inputs_item, self.current_project.inputs_folder)
         
         # 添加 outputs 文件夹 (显示为视频集)
         outputs_item = QTreeWidgetItem(root)
-        outputs_item.setText(0, "📁 视频集")
+        if FLUENT_AVAILABLE:
+            outputs_item.setText(0, "视频集")
+            outputs_item.setIcon(0, FluentIcon.VIDEO.icon())
+        else:
+            outputs_item.setText(0, "📁 视频集")
         outputs_item.setData(0, Qt.UserRole, self.current_project.outputs_folder)
         outputs_item.setExpanded(True)  # 默认展开
         self.load_folder(outputs_item, self.current_project.outputs_folder)
@@ -179,7 +220,10 @@ class ProjectExplorer(QWidget):
                             # 使用缩略图
                             thumbnail = self.create_thumbnail(item_path)
                             if thumbnail:
+                                from PyQt5.QtGui import QIcon
                                 file_item.setIcon(0, QIcon(thumbnail))
+                            elif FLUENT_AVAILABLE:
+                                file_item.setIcon(0, FluentIcon.PHOTO.icon())
                             file_item.setText(0, item_name)
                             file_item.setData(0, Qt.UserRole, item_path)
                         # 跳过所有非图片文件
@@ -191,7 +235,11 @@ class ProjectExplorer(QWidget):
                             # 使用视频预览图
                             thumbnail = self.create_video_thumbnail(item_path)
                             if thumbnail:
+                                from PyQt5.QtGui import QIcon
                                 file_item.setIcon(0, QIcon(thumbnail))
+                                file_item.setText(0, item_name)
+                            elif FLUENT_AVAILABLE:
+                                file_item.setIcon(0, FluentIcon.VIDEO.icon())
                                 file_item.setText(0, item_name)
                             else:
                                 # 没有缩略图时显示视频emoji
@@ -217,9 +265,9 @@ class ProjectExplorer(QWidget):
             if pixmap.isNull():
                 return None
             
-            # 创建 48x48 的缩略图
+            # 创建 24x24 的缩略图（更紧凑的显示）
             thumbnail = pixmap.scaled(
-                48, 48,
+                24, 24,
                 Qt.KeepAspectRatio,
                 Qt.SmoothTransformation
             )
@@ -264,10 +312,10 @@ class ProjectExplorer(QWidget):
             bytes_per_line = 3 * width
             q_image = QImage(frame_rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
             
-            # 转换为QPixmap并缩放
+            # 转换为QPixmap并缩放（更紧凑的显示）
             pixmap = QPixmap.fromImage(q_image)
             thumbnail = pixmap.scaled(
-                48, 48,
+                24, 24,
                 Qt.KeepAspectRatio,
                 Qt.SmoothTransformation
             )
@@ -360,7 +408,7 @@ class ProjectExplorer(QWidget):
     def dropEvent(self, event):
         """放置事件 - 接收外部文件"""
         if not self.current_project:
-            QMessageBox.warning(self, "提示", "请先打开工程")
+            self._show_warning("提示", "请先打开工程")
             return
         
         urls = event.mimeData().urls()
@@ -393,13 +441,57 @@ class ProjectExplorer(QWidget):
         
         # 批量导入时显示总结
         if is_batch:
-            message = f"导入完成！\n\n"
-            message += f"成功: {success_count} 个\n"
+            message = f"成功: {success_count} 个"
             if skipped_count > 0:
-                message += f"跳过: {skipped_count} 个\n"
+                message += f"\n跳过: {skipped_count} 个"
             if failed_count > 0:
-                message += f"失败: {failed_count} 个"
-            QMessageBox.information(self, "导入结果", message)
+                message += f"\n失败: {failed_count} 个"
+            self._show_info("导入完成", message)
+    
+    def _show_info(self, title, content):
+        """显示信息提示"""
+        if FLUENT_AVAILABLE:
+            from utils.message_helper import MessageHelper
+            MessageHelper.info(self.window(), title, content)
+        else:
+            QMessageBox.information(self, title, content)
+    
+    def _show_warning(self, title, content):
+        """显示警告提示"""
+        if FLUENT_AVAILABLE:
+            from utils.message_helper import MessageHelper
+            MessageHelper.warning(self.window(), title, content)
+        else:
+            QMessageBox.warning(self, title, content)
+    
+    def _show_error(self, title, content):
+        """显示错误提示"""
+        if FLUENT_AVAILABLE:
+            from utils.message_helper import MessageHelper
+            MessageHelper.error(self.window(), title, content)
+        else:
+            QMessageBox.critical(self, title, content)
+    
+    def _show_success(self, title, content):
+        """显示成功提示"""
+        if FLUENT_AVAILABLE:
+            from utils.message_helper import MessageHelper
+            MessageHelper.success(self.window(), title, content)
+        else:
+            QMessageBox.information(self, title, content)
+    
+    def _confirm(self, title, content):
+        """显示确认对话框"""
+        if FLUENT_AVAILABLE:
+            dialog = MessageBox(title, content, self.window())
+            return dialog.exec_() == 1
+        else:
+            result = QMessageBox.question(
+                self, title, content,
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            return result == QMessageBox.Yes
     
     def import_file(self, file_path, show_message=True):
         """
@@ -434,8 +526,7 @@ class ProjectExplorer(QWidget):
             file_type = "视频"
         else:
             if show_message:
-                QMessageBox.warning(
-                    self, 
+                self._show_warning(
                     "不支持的文件类型", 
                     f"文件类型 {ext} 不支持\n\n"
                     f"支持的图片格式: {', '.join(image_extensions)}\n"
@@ -449,13 +540,7 @@ class ProjectExplorer(QWidget):
             
             # 检查是否已存在
             if os.path.exists(dest_path):
-                reply = QMessageBox.question(
-                    self,
-                    "确认覆盖",
-                    f"文件 '{file_name}' 已存在，是否覆盖？",
-                    QMessageBox.Yes | QMessageBox.No
-                )
-                if reply != QMessageBox.Yes:
+                if not self._confirm("确认覆盖", f"文件 '{file_name}' 已存在，是否覆盖？"):
                     return 'skipped'
             
             # 复制文件
@@ -463,13 +548,13 @@ class ProjectExplorer(QWidget):
             
             if show_message:
                 folder_name = "图集" if ext in image_extensions else "视频集"
-                QMessageBox.information(self, "导入成功", f"{file_type}文件已导入到 {folder_name}")
+                self._show_success("导入成功", f"{file_type}文件已导入到 {folder_name}")
             
             return 'success'
             
         except Exception as e:
             if show_message:
-                QMessageBox.critical(self, "导入失败", f"无法导入文件: {str(e)}")
+                self._show_error("导入失败", f"无法导入文件: {str(e)}")
             return 'failed'
     
     def show_context_menu(self, position):
@@ -482,27 +567,56 @@ class ProjectExplorer(QWidget):
         if not file_path or not os.path.isfile(file_path):
             return
         
-        menu = QMenu(self)
-        
-        # 重命名
-        rename_action = menu.addAction("重命名")
-        rename_action.triggered.connect(lambda: self.rename_file(file_path))
-        
-        menu.addSeparator()
-        
-        # 在系统中显示
-        show_action = menu.addAction("在文件管理器中显示")
-        show_action.triggered.connect(lambda: self.show_in_finder(file_path))
-        
-        # 复制路径
-        copy_action = menu.addAction("复制路径")
-        copy_action.triggered.connect(lambda: self.copy_path(file_path))
-        
-        menu.addSeparator()
-        
-        # 删除文件
-        delete_action = menu.addAction("删除")
-        delete_action.triggered.connect(lambda: self.delete_file(file_path))
+        if FLUENT_AVAILABLE:
+            # 使用 Fluent 风格的 RoundMenu
+            menu = RoundMenu(parent=self)
+            
+            # 重命名
+            rename_action = Action(FluentIcon.EDIT, "重命名", self)
+            rename_action.triggered.connect(lambda: self.rename_file(file_path))
+            menu.addAction(rename_action)
+            
+            menu.addSeparator()
+            
+            # 在系统中显示
+            show_action = Action(FluentIcon.FOLDER, "在文件管理器中显示", self)
+            show_action.triggered.connect(lambda: self.show_in_finder(file_path))
+            menu.addAction(show_action)
+            
+            # 复制路径
+            copy_action = Action(FluentIcon.COPY, "复制路径", self)
+            copy_action.triggered.connect(lambda: self.copy_path(file_path))
+            menu.addAction(copy_action)
+            
+            menu.addSeparator()
+            
+            # 删除文件
+            delete_action = Action(FluentIcon.DELETE, "删除", self)
+            delete_action.triggered.connect(lambda: self.delete_file(file_path))
+            menu.addAction(delete_action)
+        else:
+            # 使用原生 QMenu
+            menu = QMenu(self)
+            
+            # 重命名
+            rename_action = menu.addAction("重命名")
+            rename_action.triggered.connect(lambda: self.rename_file(file_path))
+            
+            menu.addSeparator()
+            
+            # 在系统中显示
+            show_action = menu.addAction("在文件管理器中显示")
+            show_action.triggered.connect(lambda: self.show_in_finder(file_path))
+            
+            # 复制路径
+            copy_action = menu.addAction("复制路径")
+            copy_action.triggered.connect(lambda: self.copy_path(file_path))
+            
+            menu.addSeparator()
+            
+            # 删除文件
+            delete_action = menu.addAction("删除")
+            delete_action.triggered.connect(lambda: self.delete_file(file_path))
         
         menu.exec_(self.tree.viewport().mapToGlobal(position))
     
@@ -520,13 +634,13 @@ class ProjectExplorer(QWidget):
             else:  # Linux
                 subprocess.run(['xdg-open', os.path.dirname(file_path)])
         except Exception as e:
-            QMessageBox.warning(self, "错误", f"无法打开文件管理器: {str(e)}")
+            self._show_error("错误", f"无法打开文件管理器: {str(e)}")
     
     def copy_path(self, file_path):
         """复制路径到剪贴板"""
-        from PyQt5.QtWidgets import QApplication
         clipboard = QApplication.clipboard()
         clipboard.setText(file_path)
+        self._show_success("已复制", "文件路径已复制到剪贴板")
     
     def rename_file(self, file_path):
         """重命名文件"""
@@ -550,8 +664,7 @@ class ProjectExplorer(QWidget):
         
         # 检查新文件名是否已存在
         if os.path.exists(new_path):
-            QMessageBox.warning(
-                self,
+            self._show_warning(
                 "重命名失败",
                 f"文件名 '{new_name_with_ext}' 已存在，请使用其他名称。"
             )
@@ -561,23 +674,16 @@ class ProjectExplorer(QWidget):
         try:
             os.rename(file_path, new_path)
             self.refresh()
-            QMessageBox.information(self, "成功", f"文件已重命名为:\n{new_name_with_ext}")
+            self._show_success("成功", f"文件已重命名为:\n{new_name_with_ext}")
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"重命名失败: {str(e)}")
+            self._show_error("错误", f"重命名失败: {str(e)}")
     
     def delete_file(self, file_path):
         """删除文件"""
-        reply = QMessageBox.question(
-            self,
-            "确认删除",
-            f"确定要删除文件吗？\n\n{os.path.basename(file_path)}",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        
-        if reply == QMessageBox.Yes:
+        if self._confirm("确认删除", f"确定要删除文件吗？\n\n{os.path.basename(file_path)}"):
             try:
                 os.remove(file_path)
                 self.refresh()
-                QMessageBox.information(self, "成功", "文件已删除")
+                self._show_success("成功", "文件已删除")
             except Exception as e:
-                QMessageBox.critical(self, "错误", f"删除失败: {str(e)}")
+                self._show_error("错误", f"删除失败: {str(e)}")

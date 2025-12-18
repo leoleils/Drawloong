@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 图生视频 QT 客户端应用 - 主入口
-基于 PyQt5 的桌面客户端，调用阿里云 DashScope API 实现图片转视频功能
+基于 PyQt5 + QFluentWidgets 的桌面客户端，调用阿里云 DashScope API 实现图片转视频功能
 """
 
 __version__ = "1.15.1"
@@ -12,8 +12,9 @@ import os
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from ui.main_window import MainWindow
+from ui.fluent_main_window import FluentMainWindow
 from ui.splash_screen import SplashScreen
+from themes.fluent_theme import apply_fluent_theme, FLUENT_AVAILABLE
 
 
 def get_resource_path(relative_path):
@@ -42,11 +43,16 @@ def main():
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
     
-    # 设置应用样式
-    app.setStyle('Fusion')
+    # 初始化 Fluent 主题（如果可用）
+    if FLUENT_AVAILABLE:
+        # 应用已保存的 Fluent 主题配置
+        apply_fluent_theme()
+    else:
+        # 如果 QFluentWidgets 不可用，使用 Fusion 样式作为降级方案
+        app.setStyle('Fusion')
     
-    # 创建主窗口(但不显示)
-    window = MainWindow()
+    # 创建 Fluent 风格主窗口(但不显示)
+    window = FluentMainWindow()
     
     # 创建并显示开机动画
     splash = SplashScreen()

@@ -3,15 +3,22 @@
 """
 图片浏览器
 支持图片缩放、拖动
+使用 QFluentWidgets 组件美化
 """
 
 import os
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-    QPushButton, QScrollArea, QWidget
+    QScrollArea, QWidget
 )
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPixmap, QPainter
+
+# QFluentWidgets 组件
+from qfluentwidgets import (
+    ToolButton, PushButton, CardWidget, BodyLabel, CaptionLabel,
+    FluentIcon
+)
 
 
 class ImageViewer(QDialog):
@@ -32,53 +39,65 @@ class ImageViewer(QDialog):
         self.resize(1000, 700)
         
         layout = QVBoxLayout(self)
+        # 统一组件间距：8px
+        layout.setSpacing(8)
+        # 统一对话框内边距：16px
+        layout.setContentsMargins(16, 16, 16, 16)
         
-        # 工具栏
-        toolbar = QWidget()
-        toolbar_layout = QHBoxLayout(toolbar)
-        toolbar_layout.setContentsMargins(5, 5, 5, 5)
+        # 工具栏卡片
+        toolbar_card = CardWidget()
+        toolbar_layout = QHBoxLayout(toolbar_card)
+        # 统一工具栏内边距：12px 水平，8px 垂直
+        toolbar_layout.setContentsMargins(12, 8, 12, 8)
+        # 统一工具栏按钮间距：8px
+        toolbar_layout.setSpacing(8)
         
         # 文件名
-        self.filename_label = QLabel(os.path.basename(self.image_path))
-        self.filename_label.setStyleSheet("font-weight: bold;")
+        self.filename_label = BodyLabel(os.path.basename(self.image_path))
         toolbar_layout.addWidget(self.filename_label)
         
         toolbar_layout.addStretch()
         
         # 缩放比例显示
-        self.scale_label = QLabel("100%")
+        self.scale_label = CaptionLabel("100%")
         toolbar_layout.addWidget(self.scale_label)
         
         # 缩小按钮
-        zoom_out_btn = QPushButton("🔍-")
+        zoom_out_btn = ToolButton(FluentIcon.ZOOM_OUT)
         zoom_out_btn.setToolTip("缩小 (Ctrl+-)")
         zoom_out_btn.clicked.connect(self.zoom_out)
         toolbar_layout.addWidget(zoom_out_btn)
         
         # 适应窗口按钮
-        fit_btn = QPushButton("⊡")
+        fit_btn = ToolButton(FluentIcon.FIT_PAGE)
         fit_btn.setToolTip("适应窗口 (Ctrl+0)")
         fit_btn.clicked.connect(self.fit_to_window)
         toolbar_layout.addWidget(fit_btn)
         
         # 原始大小按钮
-        actual_btn = QPushButton("1:1")
+        actual_btn = ToolButton(FluentIcon.FULL_SCREEN)
         actual_btn.setToolTip("实际大小 (Ctrl+1)")
         actual_btn.clicked.connect(self.actual_size)
         toolbar_layout.addWidget(actual_btn)
         
         # 放大按钮
-        zoom_in_btn = QPushButton("🔍+")
+        zoom_in_btn = ToolButton(FluentIcon.ZOOM_IN)
         zoom_in_btn.setToolTip("放大 (Ctrl++)")
         zoom_in_btn.clicked.connect(self.zoom_in)
         toolbar_layout.addWidget(zoom_in_btn)
         
-        layout.addWidget(toolbar)
+        layout.addWidget(toolbar_card)
+        
+        # 图片显示区域卡片
+        image_card = CardWidget()
+        image_card_layout = QVBoxLayout(image_card)
+        image_card_layout.setContentsMargins(0, 0, 0, 0)
         
         # 滚动区域
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setAlignment(Qt.AlignCenter)
+        scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
         
         # 图片标签
         self.image_label = QLabel()
@@ -86,13 +105,15 @@ class ImageViewer(QDialog):
         self.image_label.setAlignment(Qt.AlignCenter)
         
         scroll_area.setWidget(self.image_label)
-        layout.addWidget(scroll_area)
+        image_card_layout.addWidget(scroll_area)
+        
+        layout.addWidget(image_card, 1)  # 让图片区域占据剩余空间
         
         # 底部按钮
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        close_btn = QPushButton("关闭")
+        close_btn = PushButton(FluentIcon.CLOSE, "关闭")
         close_btn.clicked.connect(self.close)
         button_layout.addWidget(close_btn)
         

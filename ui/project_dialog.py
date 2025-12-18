@@ -3,17 +3,23 @@
 """
 工程对话框
 用于创建和打开工程
+使用 QFluentWidgets 组件美化
 """
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-    QLineEdit, QPushButton, QTextEdit, QFileDialog,
-    QGroupBox, QMessageBox, QListWidget, QListWidgetItem,
-    QTabWidget, QWidget
+    QFileDialog, QListWidgetItem, QWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon
 import os
+
+# QFluentWidgets 组件
+from qfluentwidgets import (
+    LineEdit, TextEdit, PrimaryPushButton, PushButton,
+    CardWidget, SubtitleLabel, BodyLabel, CaptionLabel,
+    ListWidget, TabWidget, FluentIcon, InfoBar, InfoBarPosition
+)
 
 
 class NewProjectDialog(QDialog):
@@ -32,77 +38,79 @@ class NewProjectDialog(QDialog):
         self.setModal(True)
         
         layout = QVBoxLayout(self)
+        # 统一对话框区块间距：16px
+        layout.setSpacing(16)
+        # 统一对话框内边距：24px
+        layout.setContentsMargins(24, 24, 24, 24)
+        
+        # 标题
+        title_label = SubtitleLabel("创建新工程")
+        layout.addWidget(title_label)
+        
+        # 工程信息卡片
+        info_card = CardWidget()
+        info_layout = QVBoxLayout(info_card)
+        # 统一卡片内组件间距：12px
+        info_layout.setSpacing(12)
+        # 统一卡片内边距：16px
+        info_layout.setContentsMargins(16, 16, 16, 16)
         
         # 工程名称
-        name_group = QGroupBox("工程信息")
-        name_layout = QVBoxLayout(name_group)
+        name_label = BodyLabel("工程名称")
+        info_layout.addWidget(name_label)
         
-        name_label = QLabel("工程名称:")
-        name_label.setStyleSheet("font-weight: bold;")
-        name_layout.addWidget(name_label)
-        
-        self.name_input = QLineEdit()
+        self.name_input = LineEdit()
         self.name_input.setPlaceholderText("例如: MyVideoProject")
-        name_layout.addWidget(self.name_input)
+        self.name_input.setClearButtonEnabled(True)
+        info_layout.addWidget(self.name_input)
         
         # 工程位置
-        location_label = QLabel("保存位置:")
-        location_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
-        name_layout.addWidget(location_label)
+        location_label = BodyLabel("保存位置")
+        info_layout.addWidget(location_label)
         
         location_layout = QHBoxLayout()
-        self.location_input = QLineEdit()
+        location_layout.setSpacing(8)
+        self.location_input = LineEdit()
         self.location_input.setPlaceholderText("选择工程保存位置")
         self.location_input.setText(os.path.expanduser("~/Documents"))
+        self.location_input.setClearButtonEnabled(True)
         location_layout.addWidget(self.location_input)
         
-        browse_btn = QPushButton("浏览")
+        browse_btn = PushButton(FluentIcon.FOLDER, "浏览")
         browse_btn.clicked.connect(self.browse_location)
         location_layout.addWidget(browse_btn)
-        name_layout.addLayout(location_layout)
+        info_layout.addLayout(location_layout)
         
         # 工程描述
-        desc_label = QLabel("工程描述:")
-        desc_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
-        name_layout.addWidget(desc_label)
+        desc_label = BodyLabel("工程描述")
+        info_layout.addWidget(desc_label)
         
-        self.desc_input = QTextEdit()
+        self.desc_input = TextEdit()
         self.desc_input.setPlaceholderText("简要描述工程用途（可选）")
         self.desc_input.setMaximumHeight(80)
-        name_layout.addWidget(self.desc_input)
+        info_layout.addWidget(self.desc_input)
         
-        layout.addWidget(name_group)
+        layout.addWidget(info_card)
         
         # 提示信息
-        info_label = QLabel(
+        hint_label = CaptionLabel(
             "💡 工程将包含以下文件夹：\n"
             "  • pictures/  - 图集（存放输入图片）\n"
             "  • videos/ - 视频集（存放生成的视频）\n"
             "  • tasks.json - 任务记录"
         )
-        info_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
-        layout.addWidget(info_label)
+        hint_label.setTextColor("#666666", "#999999")
+        layout.addWidget(hint_label)
         
         # 按钮
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        cancel_btn = QPushButton("取消")
+        cancel_btn = PushButton("取消")
         cancel_btn.clicked.connect(self.reject)
         button_layout.addWidget(cancel_btn)
         
-        create_btn = QPushButton("创建")
-        create_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                padding: 8px 20px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-        """)
+        create_btn = PrimaryPushButton(FluentIcon.ADD, "创建")
         create_btn.clicked.connect(self.create_project)
         button_layout.addWidget(create_btn)
         
@@ -126,19 +134,39 @@ class NewProjectDialog(QDialog):
         
         # 验证
         if not name:
-            QMessageBox.warning(self, "提示", "请输入工程名称")
+            InfoBar.warning(
+                title="提示",
+                content="请输入工程名称",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=3000,
+                parent=self
+            )
             return
         
         if not location:
-            QMessageBox.warning(self, "提示", "请选择保存位置")
+            InfoBar.warning(
+                title="提示",
+                content="请选择保存位置",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=3000,
+                parent=self
+            )
             return
         
         # 检查名称合法性
         if any(c in name for c in r'\/:*?"<>|'):
-            QMessageBox.warning(
-                self, 
-                "提示", 
-                "工程名称不能包含以下字符: \\ / : * ? \" < > |"
+            InfoBar.warning(
+                title="提示",
+                content="工程名称不能包含以下字符: \\ / : * ? \" < > |",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=5000,
+                parent=self
             )
             return
         
@@ -164,52 +192,51 @@ class OpenProjectDialog(QDialog):
         self.setModal(True)
         
         layout = QVBoxLayout(self)
+        # 统一对话框区块间距：16px
+        layout.setSpacing(16)
+        # 统一对话框内边距：24px
+        layout.setContentsMargins(24, 24, 24, 24)
+        
+        # 标题
+        title_label = SubtitleLabel("打开工程")
+        layout.addWidget(title_label)
         
         # 选项卡
-        tabs = QTabWidget()
+        tabs = TabWidget()
         
         # 最近工程标签页
         recent_widget = QWidget()
         recent_layout = QVBoxLayout(recent_widget)
+        recent_layout.setSpacing(12)
+        recent_layout.setContentsMargins(16, 16, 16, 16)
         
-        recent_label = QLabel("最近打开的工程:")
-        recent_label.setStyleSheet("font-weight: bold;")
+        recent_label = BodyLabel("最近打开的工程:")
         recent_layout.addWidget(recent_label)
         
-        self.recent_list = QListWidget()
+        self.recent_list = ListWidget()
         self.recent_list.itemDoubleClicked.connect(self.open_selected)
         recent_layout.addWidget(self.recent_list)
         
         # 填充最近工程
         self.populate_recent_projects()
         
-        tabs.addTab(recent_widget, "最近工程")
+        tabs.addTab(recent_widget, FluentIcon.HISTORY, "最近工程")
         
         # 浏览标签页
         browse_widget = QWidget()
         browse_layout = QVBoxLayout(browse_widget)
+        browse_layout.setSpacing(12)
+        browse_layout.setContentsMargins(16, 16, 16, 16)
         
-        browse_label = QLabel("浏览工程文件夹:")
-        browse_label.setStyleSheet("font-weight: bold;")
+        browse_label = BodyLabel("浏览工程文件夹:")
         browse_layout.addWidget(browse_label)
         
-        browse_btn = QPushButton("选择工程文件夹")
+        browse_btn = PrimaryPushButton(FluentIcon.FOLDER, "选择工程文件夹")
         browse_btn.clicked.connect(self.browse_project)
-        browse_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #007bff;
-                color: white;
-                padding: 10px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #0056b3;
-            }
-        """)
         browse_layout.addWidget(browse_btn)
         browse_layout.addStretch()
         
-        tabs.addTab(browse_widget, "浏览")
+        tabs.addTab(browse_widget, FluentIcon.FOLDER, "浏览")
         
         layout.addWidget(tabs)
         
@@ -217,22 +244,11 @@ class OpenProjectDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        cancel_btn = QPushButton("取消")
+        cancel_btn = PushButton("取消")
         cancel_btn.clicked.connect(self.reject)
         button_layout.addWidget(cancel_btn)
         
-        open_btn = QPushButton("打开")
-        open_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                padding: 8px 20px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-        """)
+        open_btn = PrimaryPushButton(FluentIcon.FOLDER_ADD, "打开")
         open_btn.clicked.connect(self.open_selected)
         button_layout.addWidget(open_btn)
         

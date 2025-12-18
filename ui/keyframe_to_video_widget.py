@@ -80,10 +80,15 @@ class DragDropLabel(QLabel):
     def updateScaledPixmap(self):
         """根据当前大小更新缩放后的图片"""
         if self.original_pixmap and not self.original_pixmap.isNull():
-            # 获取可用空间，留出边距
-            available_width = max(self.width() - 10, 340)
-            available_height = max(self.height() - 10, 210)
-            # 缩放图片保持宽高比
+            # 获取可用空间
+            available_width = self.width() - 20
+            available_height = self.height() - 20
+            
+            # 确保最小尺寸
+            available_width = max(available_width, 280)
+            available_height = max(available_height, 160)
+            
+            # 缩放图片，保持原始宽高比（不强制16:9）
             scaled = self.original_pixmap.scaled(
                 available_width, 
                 available_height, 
@@ -247,61 +252,47 @@ class KeyframeToVideoWidget(QWidget):
         
         # 主水平分割器 - 左右布局
         main_splitter = QSplitter(Qt.Horizontal)
+        main_splitter.setChildrenCollapsible(False)  # 防止子组件被折叠
         
-        # 左侧：关键帧预览和历史记录
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(0, 0, 0, 0)
+        # 左侧：配置面板
+        config_widget = self.create_config_panel()
+        main_splitter.addWidget(config_widget)
         
-        left_splitter = QSplitter(Qt.Vertical)
-        
-        # 左上：关键帧预览（占大部分）
-        preview_widget = self.create_preview_panel()
-        left_splitter.addWidget(preview_widget)
-        
-        # 左下：任务列表
-        from .task_list import TaskListWidget
-        self.task_list = TaskListWidget(self.task_manager, self.project_manager)
-        left_splitter.addWidget(self.task_list)
-        
-        # 左侧上下比例：关键帧占2份，历史记录占1份
-        left_splitter.setStretchFactor(0, 2)
-        left_splitter.setStretchFactor(1, 1)
-        
-        left_layout.addWidget(left_splitter)
-        main_splitter.addWidget(left_widget)
-        
-        # 右侧：配置面板和视频预览
+        # 右侧：关键帧预览和视频预览
         right_widget = QWidget()
+        right_widget.setMinimumWidth(600)  # 设置最小宽度，避免被压缩为0
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(0, 0, 0, 0)
         
         right_splitter = QSplitter(Qt.Vertical)
+        right_splitter.setChildrenCollapsible(False)  # 防止子组件被折叠
         
-        # 右上：配置面板
-        config_widget = self.create_config_panel()
-        right_splitter.addWidget(config_widget)
+        # 右上：关键帧预览（首帧和尾帧左右并排）
+        preview_widget = self.create_preview_panel()
+        right_splitter.addWidget(preview_widget)
         
         # 右下：视频预览
         self.video_viewer = VideoViewerWidget()
         right_splitter.addWidget(self.video_viewer)
         
-        # 右侧上下各占一半
+        # 右侧：关键帧预览占1份，视频预览占2份（给视频预览更多空间）
         right_splitter.setStretchFactor(0, 1)
-        right_splitter.setStretchFactor(1, 1)
+        right_splitter.setStretchFactor(1, 2)
         
         right_layout.addWidget(right_splitter)
         main_splitter.addWidget(right_widget)
         
-        # 左右比例：左侧占2份，右侧占1份
+        # 左右比例：配置面板占1份，右侧（预览区）占2.5份
         main_splitter.setStretchFactor(0, 2)
-        main_splitter.setStretchFactor(1, 1)
+        main_splitter.setStretchFactor(1, 5)
         
         layout.addWidget(main_splitter)
     
     def create_config_panel(self):
         """创建配置面板"""
         widget = QWidget()
+        widget.setMinimumWidth(320)  # 设置最小宽度，确保内容显示完整，避免被压缩为0
+        widget.setMaximumWidth(450)  # 设置最大宽度，避免过宽
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         
@@ -419,54 +410,35 @@ class KeyframeToVideoWidget(QWidget):
         return widget
     
     def create_preview_panel(self):
-        """创建关键帧预览面板"""
+        """创建关键帧预览面板 - 首帧和尾帧左右并排"""
         widget = QWidget()
+        widget.setMinimumHeight(280)  # 设置最小高度，确保图片有足够空间
+        widget.setMaximumHeight(400)  # 限制最大高度
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(5, 5, 5, 5)
-        
-        # 创建可滚动区域
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)  # 始终显示垂直滚动条
-        scroll_area.setStyleSheet("""
-            QScrollArea {
-                border: none;
-                background: transparent;
-            }
-            QScrollBar:vertical {
-                width: 12px;
-                background: #f0f0f0;
-                border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
-                background: #c0c0c0;
-                border-radius: 6px;
-                min-height: 30px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #a0a0a0;
-            }
-        """)
-        
-        scroll_content = QWidget()
-        scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setContentsMargins(5, 5, 15, 5)  # 右边留出滚动条空间
         
         group_box = QGroupBox("关键帧图片")
         group_layout = QVBoxLayout(group_box)
         
-        # 首帧区域
+        # 首帧和尾帧左右并排的水平布局
+        frames_layout = QHBoxLayout()
+        frames_layout.setSpacing(10)
+        
+        # === 首帧区域 ===
+        first_frame_container = QWidget()
+        first_frame_layout = QVBoxLayout(first_frame_container)
+        first_frame_layout.setContentsMargins(0, 0, 0, 0)
+        
         first_frame_label = QLabel("首帧图片:")
         first_frame_label.setStyleSheet("font-weight: bold; font-size: 12px;")
-        group_layout.addWidget(first_frame_label)
+        first_frame_layout.addWidget(first_frame_label)
         
-        # 使用支持拖拽的Label - 增大显示区域
+        # 首帧预览 - 按16:9比例设置
         self.first_frame_preview = DragDropLabel("🖼️ 未选择\n(支持拖拽图片)")
         self.first_frame_preview.setAlignment(Qt.AlignCenter)
-        self.first_frame_preview.setMinimumHeight(220)  # 增加最小高度
-        self.first_frame_preview.setMinimumWidth(300)  # 设置最小宽度
-        self.first_frame_preview.setScaledContents(False)  # 不拉伸内容
+        self.first_frame_preview.setMinimumSize(320, 180)  # 16:9比例
+        self.first_frame_preview.setMaximumHeight(300)  # 限制最大高度，避免过高
+        self.first_frame_preview.setScaledContents(False)
         self.first_frame_preview.setStyleSheet("""
             QLabel {
                 border: 2px dashed #ddd;
@@ -476,21 +448,21 @@ class KeyframeToVideoWidget(QWidget):
             }
         """)
         self.first_frame_preview.image_dropped.connect(self.on_first_frame_dropped)
-        group_layout.addWidget(self.first_frame_preview)
+        first_frame_layout.addWidget(self.first_frame_preview)
         
         # 首帧按钮组
         first_btn_layout = QHBoxLayout()
         
         self.select_first_btn = QPushButton("从工程选择")
         self.select_first_btn.clicked.connect(lambda: self.select_from_project('first'))
-        self.select_first_btn.setMinimumHeight(32)  # 设置最小高度，避免被压缩
+        self.select_first_btn.setMinimumHeight(32)
         self.select_first_btn.setStyleSheet("""
             QPushButton {
                 background-color: #007bff;
                 color: white;
                 padding: 6px 12px;
                 border-radius: 4px;
-                font-size: 12px;
+                font-size: 11px;
             }
             QPushButton:hover {
                 background-color: #0056b3;
@@ -500,14 +472,14 @@ class KeyframeToVideoWidget(QWidget):
         
         self.browse_first_btn = QPushButton("浏览...")
         self.browse_first_btn.clicked.connect(self.select_first_frame)
-        self.browse_first_btn.setMinimumHeight(32)  # 设置最小高度
+        self.browse_first_btn.setMinimumHeight(32)
         self.browse_first_btn.setStyleSheet("""
             QPushButton {
                 background-color: #28a745;
                 color: white;
                 padding: 6px 12px;
                 border-radius: 4px;
-                font-size: 12px;
+                font-size: 11px;
             }
             QPushButton:hover {
                 background-color: #218838;
@@ -515,18 +487,24 @@ class KeyframeToVideoWidget(QWidget):
         """)
         first_btn_layout.addWidget(self.browse_first_btn)
         
-        group_layout.addLayout(first_btn_layout)
+        first_frame_layout.addLayout(first_btn_layout)
+        frames_layout.addWidget(first_frame_container)
         
-        # 尾帧区域
+        # === 尾帧区域 ===
+        last_frame_container = QWidget()
+        last_frame_layout = QVBoxLayout(last_frame_container)
+        last_frame_layout.setContentsMargins(0, 0, 0, 0)
+        
         last_frame_label = QLabel("尾帧图片:")
-        last_frame_label.setStyleSheet("font-weight: bold; font-size: 12px; margin-top: 10px;")
-        group_layout.addWidget(last_frame_label)
+        last_frame_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        last_frame_layout.addWidget(last_frame_label)
         
+        # 尾帧预览 - 按16:9比例设置
         self.last_frame_preview = DragDropLabel("🖼️ 未选择\n(支持拖拽图片)")
         self.last_frame_preview.setAlignment(Qt.AlignCenter)
-        self.last_frame_preview.setMinimumHeight(220)  # 增加最小高度
-        self.last_frame_preview.setMinimumWidth(300)  # 设置最小宽度
-        self.last_frame_preview.setScaledContents(False)  # 不拉伸内容
+        self.last_frame_preview.setMinimumSize(320, 180)  # 16:9比例
+        self.last_frame_preview.setMaximumHeight(300)  # 限制最大高度，避免过高
+        self.last_frame_preview.setScaledContents(False)
         self.last_frame_preview.setStyleSheet("""
             QLabel {
                 border: 2px dashed #ddd;
@@ -536,21 +514,21 @@ class KeyframeToVideoWidget(QWidget):
             }
         """)
         self.last_frame_preview.image_dropped.connect(self.on_last_frame_dropped)
-        group_layout.addWidget(self.last_frame_preview)
+        last_frame_layout.addWidget(self.last_frame_preview)
         
         # 尾帧按钮组
         last_btn_layout = QHBoxLayout()
         
         self.select_last_btn = QPushButton("从工程选择")
         self.select_last_btn.clicked.connect(lambda: self.select_from_project('last'))
-        self.select_last_btn.setMinimumHeight(32)  # 设置最小高度
+        self.select_last_btn.setMinimumHeight(32)
         self.select_last_btn.setStyleSheet("""
             QPushButton {
                 background-color: #007bff;
                 color: white;
                 padding: 6px 12px;
                 border-radius: 4px;
-                font-size: 12px;
+                font-size: 11px;
             }
             QPushButton:hover {
                 background-color: #0056b3;
@@ -560,14 +538,14 @@ class KeyframeToVideoWidget(QWidget):
         
         self.browse_last_btn = QPushButton("浏览...")
         self.browse_last_btn.clicked.connect(self.select_last_frame)
-        self.browse_last_btn.setMinimumHeight(32)  # 设置最小高度
+        self.browse_last_btn.setMinimumHeight(32)
         self.browse_last_btn.setStyleSheet("""
             QPushButton {
                 background-color: #28a745;
                 color: white;
                 padding: 6px 12px;
                 border-radius: 4px;
-                font-size: 12px;
+                font-size: 11px;
             }
             QPushButton:hover {
                 background-color: #218838;
@@ -575,11 +553,11 @@ class KeyframeToVideoWidget(QWidget):
         """)
         last_btn_layout.addWidget(self.browse_last_btn)
         
-        group_layout.addLayout(last_btn_layout)
+        last_frame_layout.addLayout(last_btn_layout)
+        frames_layout.addWidget(last_frame_container)
         
-        scroll_layout.addWidget(group_box)
-        scroll_area.setWidget(scroll_content)
-        layout.addWidget(scroll_area)
+        group_layout.addLayout(frames_layout)
+        layout.addWidget(group_box)
         return widget
     
     def select_first_frame(self):
@@ -752,8 +730,9 @@ class KeyframeToVideoWidget(QWidget):
         if hasattr(main_window, 'project_explorer'):
             main_window.project_explorer.refresh()
         
-        # 刷新任务列表
-        self.task_list.refresh_tasks()
+        # 刷新浮动任务列表
+        if hasattr(main_window, 'floating_task_list'):
+            main_window.floating_task_list.refresh_tasks()
         
         QMessageBox.information(
             self,

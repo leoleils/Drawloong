@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.15.1-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.16.0-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
@@ -307,6 +307,16 @@ pyinstaller wanx.spec
 ---
 
 ## 📈 更新日志
+
+### v1.16.0 (2025-12-18)
+- 🎨 全新 QFluent UI 界面美化
+- ✨ 新增 Fluent Design 风格主题系统
+- 🖼️ 优化图片查看器和视频播放器界面
+- 📁 新增抽屉式项目资源管理器和任务列表
+- 🎯 新增 Fluent 风格状态栏
+- 💬 新增统一消息提示助手
+- 🔧 优化设置对话框和欢迎页面样式
+- 📦 新增视觉常量配置文件
 
 ### v1.15.2 (2025-12-16)
 - 🎯 图集和视频集严格文件类型控制

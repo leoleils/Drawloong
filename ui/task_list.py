@@ -3,17 +3,23 @@
 """
 任务列表组件
 显示和管理所有任务
+使用 QFluentWidgets 美化
 """
 
 import os
 from datetime import datetime
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
-    QTableWidgetItem, QPushButton, QHeaderView,
-    QGroupBox, QMessageBox
+    QWidget, QVBoxLayout, QHBoxLayout,
+    QTableWidgetItem, QHeaderView
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt5.QtGui import QColor
+
+from qfluentwidgets import (
+    TableWidget, PushButton, CardWidget, SubtitleLabel,
+    FluentIcon, ProgressBar, InfoBar, InfoBarPosition,
+    ToolButton, setFont
+)
 
 from core.task_manager import TaskManager
 from core.api_client import DashScopeClient
@@ -103,7 +109,7 @@ class TaskMonitorThread(QThread):
 
 
 class TaskListWidget(QWidget):
-    """任务列表组件"""
+    """任务列表组件 - 使用 QFluentWidgets 美化"""
     
     task_updated = pyqtSignal(str)  # task_id
     
@@ -125,38 +131,76 @@ class TaskListWidget(QWidget):
     def setup_ui(self):
         """设置用户界面"""
         layout = QVBoxLayout(self)
+        # 统一外边距：16px（与其他组件保持一致）
+        layout.setContentsMargins(16, 16, 16, 16)
+        # 统一组件间距：12px
+        layout.setSpacing(12)
         
-        # 创建组框
-        group_box = QGroupBox("任务列表")
-        group_layout = QVBoxLayout(group_box)
+        # 创建卡片容器
+        card = CardWidget(self)
+        card_layout = QVBoxLayout(card)
+        # 统一卡片内边距：16px
+        card_layout.setContentsMargins(16, 16, 16, 16)
+        # 统一卡片内组件间距：12px
+        card_layout.setSpacing(12)
         
-        # 顶部按钮栏
-        button_layout = QHBoxLayout()
+        # 标题和按钮栏
+        header_layout = QHBoxLayout()
         
-        refresh_btn = QPushButton("刷新")
-        refresh_btn.clicked.connect(self.refresh_tasks)
-        button_layout.addWidget(refresh_btn)
+        # 标题
+        title_label = SubtitleLabel("任务列表")
+        header_layout.addWidget(title_label)
         
-        button_layout.addStretch()
-        group_layout.addLayout(button_layout)
+        header_layout.addStretch()
         
-        # 任务表格
-        self.table = QTableWidget()
+        # 刷新按钮 - 使用 PushButton 配合 FluentIcon
+        self.refresh_btn = PushButton(FluentIcon.SYNC, "刷新")
+        self.refresh_btn.clicked.connect(self.refresh_tasks)
+        header_layout.addWidget(self.refresh_btn)
+        
+        card_layout.addLayout(header_layout)
+        
+        # 任务表格 - 使用 QFluentWidgets 的 TableWidget
+        self.table = TableWidget(self)
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels([
-            '任务ID', '提示词', '模型', '分辨率', 
-            '状态', '创建时间'
+            '状态', '任务ID', '提示词', '模型', '分辨率', '创建时间'
         ])
         
         # 设置表格属性
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setSelectRightClickedRow(True)
+        self.table.setBorderVisible(True)
+        self.table.setBorderRadius(8)
+        self.table.setWordWrap(False)
+        self.table.verticalHeader().hide()
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.table.setAlternatingRowColors(True)
         
-        group_layout.addWidget(self.table)
-        layout.addWidget(group_box)
+        card_layout.addWidget(self.table)
+        layout.addWidget(card)
+    
+    def _get_status_icon(self, status: TaskStatus) -> FluentIcon:
+        """根据任务状态返回对应的 FluentIcon"""
+        if status == TaskStatus.SUCCEEDED:
+            return FluentIcon.COMPLETED
+        elif status == TaskStatus.FAILED:
+            return FluentIcon.CLOSE
+        elif status == TaskStatus.RUNNING:
+            return FluentIcon.SYNC
+        elif status == TaskStatus.PENDING:
+            return FluentIcon.HISTORY
+        else:
+            return FluentIcon.INFO
+    
+    def _get_status_text(self, status: TaskStatus) -> str:
+        """根据任务状态返回显示文本"""
+        status_map = {
+            TaskStatus.SUCCEEDED: "成功",
+            TaskStatus.FAILED: "失败",
+            TaskStatus.RUNNING: "运行中",
+            TaskStatus.PENDING: "等待中",
+        }
+        return status_map.get(status, status.value)
     
     def refresh_tasks(self):
         """刷新任务列表"""
@@ -172,33 +216,48 @@ class TaskListWidget(QWidget):
         for row, task in enumerate(tasks):
             self.table.insertRow(row)
             
+            # 状态图标和文字
+            status_icon = self._get_status_icon(task.status)
+            status_text = self._get_status_text(task.status)
+            
+            # 创建状态单元格 - 使用 ToolButton 显示图标
+            status_widget = QWidget()
+            status_layout = QHBoxLayout(status_widget)
+            status_layout.setContentsMargins(8, 4, 8, 4)
+            status_layout.setSpacing(6)
+            
+            status_btn = ToolButton(status_icon)
+            status_btn.setFixedSize(24, 24)
+            status_btn.setEnabled(False)  # 仅作为图标显示
+            status_layout.addWidget(status_btn)
+            
+            from qfluentwidgets import BodyLabel
+            status_label = BodyLabel(status_text)
+            status_layout.addWidget(status_label)
+            status_layout.addStretch()
+            
+            self.table.setCellWidget(row, 0, status_widget)
+            
             # 任务ID
             id_item = QTableWidgetItem(task.id[:8] + '...')
-            self.table.setItem(row, 0, id_item)
+            id_item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 1, id_item)
             
             # 提示词
-            prompt_item = QTableWidgetItem(
-                task.prompt[:30] + '...' if len(task.prompt) > 30 else task.prompt
-            )
-            self.table.setItem(row, 1, prompt_item)
+            prompt_text = task.prompt[:30] + '...' if len(task.prompt) > 30 else task.prompt
+            prompt_item = QTableWidgetItem(prompt_text)
+            prompt_item.setToolTip(task.prompt)  # 完整提示词作为 tooltip
+            self.table.setItem(row, 2, prompt_item)
             
             # 模型
             model_item = QTableWidgetItem(task.model)
-            self.table.setItem(row, 2, model_item)
+            model_item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 3, model_item)
             
             # 分辨率
             resolution_item = QTableWidgetItem(task.resolution)
-            self.table.setItem(row, 3, resolution_item)
-            
-            # 状态
-            status_item = QTableWidgetItem(task.status.value)
-            if task.status == TaskStatus.SUCCEEDED:
-                status_item.setBackground(QColor(212, 237, 218))
-            elif task.status == TaskStatus.FAILED:
-                status_item.setBackground(QColor(248, 215, 218))
-            elif task.status == TaskStatus.RUNNING:
-                status_item.setBackground(QColor(255, 243, 205))
-            self.table.setItem(row, 4, status_item)
+            resolution_item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 4, resolution_item)
             
             # 创建时间
             try:
@@ -207,7 +266,12 @@ class TaskListWidget(QWidget):
             except:
                 time_str = task.created_at[:16]
             time_item = QTableWidgetItem(time_str)
+            time_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 5, time_item)
+        
+        # 调整行高
+        for row in range(self.table.rowCount()):
+            self.table.setRowHeight(row, 44)
     
     def start_monitoring_task(self, task_id):
         """开始监控任务"""

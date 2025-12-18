@@ -9,11 +9,12 @@ import os
 import shutil
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QStatusBar, QMessageBox, QSplitter, QPushButton, QAction, QStackedWidget, QTabWidget
+    QLabel, QStatusBar, QSplitter, QPushButton, QAction, QStackedWidget, QTabWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 
+from utils.message_helper import MessageHelper
 from .upload_widget import UploadWidget
 from .config_panel import ConfigPanel
 from .task_list import TaskListWidget
@@ -393,14 +394,12 @@ class MainWindow(QMainWindow):
     def check_api_key(self):
         """检查 API 密钥配置"""
         if not settings.is_api_key_valid():
-            reply = QMessageBox.question(
+            confirmed = MessageHelper.confirm(
                 self,
                 "配置提醒",
-                "未检测到 API 密钥配置\n\n"
-                "是否现在打开设置页面配置？",
-                QMessageBox.Yes | QMessageBox.No
+                "未检测到 API 密钥配置\n\n是否现在打开设置页面配置？"
             )
-            if reply == QMessageBox.Yes:
+            if confirmed:
                 self.open_settings()
             else:
                 self.config_panel.generate_btn.setEnabled(False)
@@ -414,16 +413,16 @@ class MainWindow(QMainWindow):
     def on_generate_clicked(self, config):
         """生成按钮点击回调"""
         if not self.current_image_path:
-            QMessageBox.warning(self, "提示", "请先选择一张图片")
+            MessageHelper.warning(self, "提示", "请先选择一张图片")
             return
         
         if not settings.is_api_key_valid():
-            QMessageBox.warning(self, "提示", "API 密钥未配置或无效")
+            MessageHelper.warning(self, "提示", "API 密钥未配置或无效")
             return
         
         # 检查是否有工程
         if not self.project_manager.has_project():
-            QMessageBox.warning(self, "提示", "请先创建或打开工程")
+            MessageHelper.warning(self, "提示", "请先创建或打开工程")
             return
         
         project = self.project_manager.get_current_project()
@@ -495,7 +494,7 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage("任务已提交，正在生成视频...")
             
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"任务提交失败：{str(e)}")
+            MessageHelper.error(self, "错误", f"任务提交失败：{str(e)}")
             self.status_bar.showMessage("任务提交失败")
             # 恢复按钮
             self.config_panel.generate_btn.setEnabled(True)
@@ -517,12 +516,12 @@ class MainWindow(QMainWindow):
                     # 自动加载视频到播放器
                     if task.output_path and os.path.exists(task.output_path):
                         self.video_viewer.load_video(task.output_path)
-                        QMessageBox.information(self, "成功", "视频生成完成！已自动加载到播放器。")
+                        MessageHelper.success(self, "成功", "视频生成完成！已自动加载到播放器。")
                     else:
-                        QMessageBox.information(self, "成功", "视频生成完成！")
+                        MessageHelper.success(self, "成功", "视频生成完成！")
                 else:
                     self.status_bar.showMessage(f"视频生成失败")
-                    QMessageBox.warning(self, "失败", "视频生成失败，请查看任务列表了解详情。")
+                    MessageHelper.warning(self, "失败", "视频生成失败，请查看任务列表了解详情。")
                 
                 # 清除当前任务ID
                 self.current_generating_task_id = None
@@ -627,9 +626,9 @@ class MainWindow(QMainWindow):
             project = self.project_manager.create_project(name, location, description)
             self.switch_to_project(project)
             self.status_bar.showMessage(f"工程 '{name}' 创建成功")
-            QMessageBox.information(self, "成功", f"工程 '{name}' 已创建")
+            MessageHelper.success(self, "成功", f"工程 '{name}' 已创建")
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"创建工程失败：{str(e)}")
+            MessageHelper.error(self, "错误", f"创建工程失败：{str(e)}")
     
     def open_project(self):
         """打开工程"""
@@ -645,18 +644,17 @@ class MainWindow(QMainWindow):
             self.switch_to_project(project)
             self.status_bar.showMessage(f"工程 '{project.name}' 已打开")
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"打开工程失败：{str(e)}")
+            MessageHelper.error(self, "错误", f"打开工程失败：{str(e)}")
     
     def close_project(self):
         """关闭工程"""
         if self.project_manager.has_project():
-            reply = QMessageBox.question(
+            confirmed = MessageHelper.confirm(
                 self,
                 "确认关闭",
-                "确定要关闭当前工程吗？",
-                QMessageBox.Yes | QMessageBox.No
+                "确定要关闭当前工程吗？"
             )
-            if reply == QMessageBox.Yes:
+            if confirmed:
                 self.project_manager.close_project()
                 self.switch_to_welcome_page()
                 self.status_bar.showMessage("已关闭工程")
@@ -769,8 +767,8 @@ class MainWindow(QMainWindow):
     def on_theme_changed(self, theme_name):
         """主题变更处理"""
         self.apply_theme(theme_name)
-        QMessageBox.information(
+        MessageHelper.success(
             self,
             "主题已更改",
-            f"主题已成功切换!\n\n新主题已应用到整个应用。"
+            "主题已成功切换！新主题已应用到整个应用。"
         )

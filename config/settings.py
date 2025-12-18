@@ -85,6 +85,67 @@ class Settings:
     def get_theme(self) -> str:
         """获取当前主题"""
         return self.qsettings.value('theme', 'light')
+    
+    # ========== Fluent 主题配置方法 ==========
+    
+    def get_fluent_theme(self) -> str:
+        """
+        获取 Fluent 主题设置
+        
+        Returns:
+            主题名称 ('light', 'dark', 'auto')
+        """
+        theme = self.qsettings.value('fluent_theme', 'light')
+        # 确保返回有效的主题名称
+        if not theme or not isinstance(theme, str):
+            return 'light'
+        
+        valid_themes = ['light', 'dark', 'auto']
+        theme_lower = theme.lower().strip()
+        if theme_lower not in valid_themes:
+            return 'light'
+        
+        return theme_lower
+    
+    def set_fluent_theme(self, theme_name: str):
+        """
+        设置 Fluent 主题
+        
+        Args:
+            theme_name: 主题名称 ('light', 'dark', 'auto')
+        """
+        # 处理 None 或空字符串
+        if not theme_name or not isinstance(theme_name, str):
+            theme_name = 'light'
+        
+        valid_themes = ['light', 'dark', 'auto']
+        theme_name_lower = theme_name.lower().strip()
+        if theme_name_lower not in valid_themes:
+            theme_name_lower = 'light'
+        
+        self.qsettings.setValue('fluent_theme', theme_name_lower)
+        self.qsettings.sync()
+    
+    def get_accent_color(self) -> str:
+        """
+        获取主题强调色
+        
+        Returns:
+            颜色值 (十六进制格式，如 '#007bff')
+        """
+        return self.qsettings.value('accent_color', '#007bff')
+    
+    def set_accent_color(self, color: str):
+        """
+        设置主题强调色
+        
+        Args:
+            color: 颜色值 (十六进制格式，如 '#007bff')
+        """
+        # 简单验证颜色格式
+        if color and color.startswith('#') and len(color) in [4, 7, 9]:
+            self.qsettings.setValue('accent_color', color)
+            self.qsettings.sync()
 
 
 # 全局配置实例
