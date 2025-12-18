@@ -48,6 +48,17 @@ hiddenimports = [
     'PyQt5.QtMultimediaWidgets',
     'PyQt5.sip',
     
+    # QFluentWidgets 相关
+    'qfluentwidgets',
+    'qfluentwidgets.common',
+    'qfluentwidgets.common.config',
+    'qfluentwidgets.common.style_sheet',
+    'qfluentwidgets.common.theme_listener',
+    'qfluentwidgets.components',
+    'qfluentwidgets.window',
+    'qfluentwidgets._rc',
+    'qfluentwidgets._rc.resource',
+    
     # 网络请求
     'requests',
     'urllib3',
@@ -89,7 +100,7 @@ a = Analysis(
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
-    hookspath=[],
+    hookspath=['hooks'],
     hooksconfig={},
     runtime_hooks=[],
     excludes=excludes,

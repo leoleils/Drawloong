@@ -113,7 +113,8 @@ class FluentThemeManager:
             
             fluent_theme = theme_map.get(app_theme, Theme.LIGHT)
             # 使用 lazy=False 确保立即更新样式表
-            setTheme(fluent_theme, save=True, lazy=False)
+            # save=False 因为我们自己用 QSettings 保存配置
+            setTheme(fluent_theme, save=False, lazy=False)
             
             # 保存配置
             self._current_theme = app_theme

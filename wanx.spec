@@ -25,8 +25,18 @@ a = Analysis(
         'dotenv',
         'cv2',
         'numpy',
+        # QFluentWidgets 相关
+        'qfluentwidgets',
+        'qfluentwidgets.common',
+        'qfluentwidgets.common.config',
+        'qfluentwidgets.common.style_sheet',
+        'qfluentwidgets.common.theme_listener',
+        'qfluentwidgets.components',
+        'qfluentwidgets.window',
+        'qfluentwidgets._rc',
+        'qfluentwidgets._rc.resource',
     ],
-    hookspath=[],
+    hookspath=['hooks'],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
@@ -82,5 +92,8 @@ app = BUNDLE(
         'CFBundleVersion': "1.16.0",
         'CFBundleShortVersionString': "1.16.0",
         'NSHighResolutionCapable': 'True',
+        # 解决 App Translocation 问题
+        'LSUIElement': False,
+        'NSRequiresAquaSystemAppearance': False,  # 支持深色模式
     },
 )

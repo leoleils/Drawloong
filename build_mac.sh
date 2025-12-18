@@ -5,6 +5,18 @@ echo "🚀 开始打包烛龙绘影 Mac 应用..."
 # 进入项目目录
 cd "$(dirname "$0")"
 
+# 检查虚拟环境
+if [ -d ".venv" ]; then
+    echo "🔧 激活虚拟环境..."
+    source .venv/bin/activate
+fi
+
+# 检查 PyInstaller 是否安装
+if ! command -v pyinstaller &> /dev/null; then
+    echo "❌ PyInstaller 未安装，正在安装..."
+    pip install pyinstaller
+fi
+
 # 清理之前的构建
 echo "🧹 清理之前的构建..."
 rm -rf build dist
@@ -28,6 +40,10 @@ if [ -d "dist/Drawloong.app" ]; then
     # 创建应用程序快捷方式
     ln -s /Applications dist/dmg/Applications
     
+    # 移除 quarantine 属性（解决 App Translocation 问题）
+    echo "🔓 移除 quarantine 属性..."
+    xattr -cr dist/dmg/Drawloong.app
+    
     # 创建 DMG
     hdiutil create -volname "烛龙绘影" -srcfolder dist/dmg -ov -format UDZO dist/Drawloong.dmg
     
@@ -42,6 +58,9 @@ if [ -d "dist/Drawloong.app" ]; then
         ls -lh dist/Drawloong.dmg
         echo ""
         echo "🎉 打包完成！可以分发 dist/Drawloong.dmg 文件"
+        echo ""
+        echo "💡 提示: 如果用户安装后遇到问题，可以运行以下命令移除 quarantine 属性:"
+        echo "   xattr -cr /Applications/Drawloong.app"
     else
         echo "⚠️  DMG 创建失败，但 .app 文件可用"
     fi
