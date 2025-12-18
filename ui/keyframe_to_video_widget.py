@@ -273,11 +273,12 @@ class KeyframeToVideoWidget(QWidget):
         
         # 右下：视频预览
         self.video_viewer = VideoViewerWidget()
+        self.video_viewer.setMinimumHeight(250)  # 设置最小高度
         right_splitter.addWidget(self.video_viewer)
         
-        # 右侧：关键帧预览占1份，视频预览占2份（给视频预览更多空间）
+        # 右侧：关键帧预览占1份，视频预览占3份（给视频预览更多空间）
         right_splitter.setStretchFactor(0, 1)
-        right_splitter.setStretchFactor(1, 2)
+        right_splitter.setStretchFactor(1, 3)
         
         right_layout.addWidget(right_splitter)
         main_splitter.addWidget(right_widget)
@@ -412,8 +413,8 @@ class KeyframeToVideoWidget(QWidget):
     def create_preview_panel(self):
         """创建关键帧预览面板 - 首帧和尾帧左右并排"""
         widget = QWidget()
-        widget.setMinimumHeight(280)  # 设置最小高度，确保图片有足够空间
-        widget.setMaximumHeight(400)  # 限制最大高度
+        widget.setMinimumHeight(200)  # 设置最小高度
+        widget.setMaximumHeight(280)  # 限制最大高度，给视频预览更多空间
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(5, 5, 5, 5)
         
@@ -436,8 +437,8 @@ class KeyframeToVideoWidget(QWidget):
         # 首帧预览 - 按16:9比例设置
         self.first_frame_preview = DragDropLabel("🖼️ 未选择\n(支持拖拽图片)")
         self.first_frame_preview.setAlignment(Qt.AlignCenter)
-        self.first_frame_preview.setMinimumSize(320, 180)  # 16:9比例
-        self.first_frame_preview.setMaximumHeight(300)  # 限制最大高度，避免过高
+        self.first_frame_preview.setMinimumSize(200, 120)  # 16:9比例，更小的最小尺寸
+        self.first_frame_preview.setMaximumHeight(180)  # 限制最大高度
         self.first_frame_preview.setScaledContents(False)
         self.first_frame_preview.setStyleSheet("""
             QLabel {
@@ -502,8 +503,8 @@ class KeyframeToVideoWidget(QWidget):
         # 尾帧预览 - 按16:9比例设置
         self.last_frame_preview = DragDropLabel("🖼️ 未选择\n(支持拖拽图片)")
         self.last_frame_preview.setAlignment(Qt.AlignCenter)
-        self.last_frame_preview.setMinimumSize(320, 180)  # 16:9比例
-        self.last_frame_preview.setMaximumHeight(300)  # 限制最大高度，避免过高
+        self.last_frame_preview.setMinimumSize(200, 120)  # 16:9比例，更小的最小尺寸
+        self.last_frame_preview.setMaximumHeight(180)  # 限制最大高度
         self.last_frame_preview.setScaledContents(False)
         self.last_frame_preview.setStyleSheet("""
             QLabel {
@@ -1019,3 +1020,12 @@ class KeyframeToVideoWidget(QWidget):
         
         # 显示元数据
         self.display_metadata(metadata)
+
+    def showEvent(self, event):
+        """显示事件 - 仅首次显示时刷新布局"""
+        super().showEvent(event)
+        # 只在首次显示时刷新，避免抖动
+        if not hasattr(self, '_first_show_done'):
+            self._first_show_done = True
+            from PyQt5.QtCore import QTimer
+            QTimer.singleShot(50, self.updateGeometry)

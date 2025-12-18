@@ -57,6 +57,16 @@ class FirstFrameInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("firstFrameInterface")
+        self._first_show = True
+    
+    def showEvent(self, event):
+        """显示事件 - 仅首次显示时刷新布局"""
+        super().showEvent(event)
+        # 只在首次显示时刷新，避免抖动
+        if self._first_show:
+            self._first_show = False
+            from PyQt5.QtCore import QTimer
+            QTimer.singleShot(50, self.updateGeometry)
 
 
 class KeyframeInterface(QWidget):
@@ -233,8 +243,7 @@ class FluentMainWindow(FluentWindow):
     
     def create_first_frame_interface(self):
         """创建首帧生视频界面"""
-        interface = QWidget()
-        interface.setObjectName("firstFrameInterface")
+        interface = FirstFrameInterface()
         layout = QHBoxLayout(interface)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -259,14 +268,17 @@ class FluentMainWindow(FluentWindow):
         left_layout.setContentsMargins(5, 5, 5, 5)
         
         left_splitter = QSplitter(Qt.Vertical)
+        left_splitter.setChildrenCollapsible(False)  # 防止子组件被折叠
         
         # 上：上传图片
         self.upload_widget = UploadWidget()
         self.upload_widget.set_project_manager(self.project_manager)
+        self.upload_widget.setMinimumHeight(250)  # 设置最小高度，避免被压缩为0
         left_splitter.addWidget(self.upload_widget)
         
         # 下：视频浏览
         self.video_viewer = VideoViewerWidget()
+        self.video_viewer.setMinimumHeight(300)  # 设置最小高度，避免被压缩为0
         left_splitter.addWidget(self.video_viewer)
         
         left_splitter.setStretchFactor(0, 1)
@@ -446,10 +458,7 @@ class FluentMainWindow(FluentWindow):
             MessageHelper.warning(self, "提示", "请先创建或打开工程")
             self.stackedWidget.setCurrentWidget(self.welcome_interface)
         
-        # 强制刷新当前界面的布局，避免白屏
-        if current_widget:
-            current_widget.updateGeometry()
-            current_widget.update()
+
     
     def _update_navigation_visibility(self):
         """更新导航项可见性（通过启用/禁用导航项）"""
@@ -888,13 +897,7 @@ class FluentMainWindow(FluentWindow):
         # 切换到首帧生视频界面
         if FLUENT_AVAILABLE:
             self.stackedWidget.setCurrentWidget(self.first_frame_interface)
-            # 强制刷新界面布局，避免白屏
-            self.first_frame_interface.updateGeometry()
-            self.first_frame_interface.update()
-            # 使用 QTimer 延迟刷新，确保界面完全加载
-            from PyQt5.QtCore import QTimer
-            QTimer.singleShot(100, lambda: self.first_frame_interface.updateGeometry())
-        
+    
         # 启用关闭工程菜单
         self.close_project_action.setEnabled(True)
     
