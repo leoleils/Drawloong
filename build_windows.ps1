@@ -1,6 +1,6 @@
 # ========================================
 # 烛龙绘影 Drawloong Windows 打包脚本 (PowerShell)
-# 版本: v1.15.0
+# 版本: v1.16.0
 # 编码: UTF-8
 # ========================================
 
@@ -15,7 +15,7 @@ $env:PIP_TRUSTED_HOST = "pypi.tuna.tsinghua.edu.cn"
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  烛龙绘影 Drawloong Windows 打包脚本" -ForegroundColor Cyan
-Write-Host "  版本: v1.15.1" -ForegroundColor Cyan
+Write-Host "  版本: v1.16.0" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -179,7 +179,7 @@ if (Test-Path "logo.png") { Copy-Item "logo.png" $distPath -Force }
 
 # 创建使用说明
 $readmeContent = @"
-烛龙绘影 Drawloong v1.15.0
+烛龙绘影 Drawloong v1.16.0
 ==========================
 
 使用方法:

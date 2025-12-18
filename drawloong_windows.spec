@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
 烛龙绘影 Drawloong Windows 打包配置
-版本: v1.15.0
+版本: v1.16.0
 """
 
 import os
@@ -32,6 +32,10 @@ if os.path.exists('themes'):
 # 添加配置文件夹
 if os.path.exists('config'):
     datas.append(('config', 'config'))
+
+# 添加工具文件夹
+if os.path.exists('utils'):
+    datas.append(('utils', 'utils'))
 
 # 隐藏导入
 hiddenimports = [
