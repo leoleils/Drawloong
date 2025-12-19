@@ -220,10 +220,12 @@ class OpenProjectDialog(QDialog):
         # 填充最近工程
         self.populate_recent_projects()
         
-        tabs.addTab(recent_widget, FluentIcon.HISTORY, "最近工程")
+        recent_widget.setObjectName("recentTab")
+        tabs.addSubInterface(recent_widget, "recentTab", "最近工程", FluentIcon.HISTORY)
         
         # 浏览标签页
         browse_widget = QWidget()
+        browse_widget.setObjectName("browseTab")
         browse_layout = QVBoxLayout(browse_widget)
         browse_layout.setSpacing(12)
         browse_layout.setContentsMargins(16, 16, 16, 16)
@@ -236,7 +238,7 @@ class OpenProjectDialog(QDialog):
         browse_layout.addWidget(browse_btn)
         browse_layout.addStretch()
         
-        tabs.addTab(browse_widget, FluentIcon.FOLDER, "浏览")
+        tabs.addSubInterface(browse_widget, "browseTab", "浏览", FluentIcon.FOLDER)
         
         layout.addWidget(tabs)
         
