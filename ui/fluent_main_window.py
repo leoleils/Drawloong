@@ -191,7 +191,8 @@ class FluentMainWindow(FluentWindow):
         self.welcome_interface.setObjectName("welcomeInterface")
         welcome_layout = QVBoxLayout(self.welcome_interface)
         welcome_layout.setContentsMargins(0, 0, 0, 0)
-        welcome_layout.addWidget(self.welcome_page, alignment=Qt.AlignCenter)
+        welcome_layout.setSpacing(0)
+        welcome_layout.addWidget(self.welcome_page)
         
         # 加载最近项目到欢迎页面
         self._load_recent_projects_to_welcome()

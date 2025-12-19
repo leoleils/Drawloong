@@ -5,7 +5,7 @@
 <h1 align="center">烛龙绘影 Drawloong</h1>
 
 <p align="center">
-  <strong>🎨 基于阿里云 DashScope 的多功能 AI 创作桌面客户端</strong>
+  <strong>基于阿里云 DashScope 的多功能 AI 创作桌面客户端</strong>
 </p>
 
 <p align="center">
@@ -23,62 +23,38 @@
 </p>
 
 <p align="center">
-  <img src="welcome.png" alt="Drawloong Welcome Screen" width="800">
+  <img src="welcome-cover.png" alt="Drawloong Welcome Screen" width="800">
 </p>
 
 ---
 
-## ✨ 功能特性
+## 功能特性
 
-<table>
-  <tr>
-    <td align="center" width="20%">
-      <img src="https://img.icons8.com/fluency/96/video.png" width="48"><br>
-      <b>🎬 首帧生视频</b><br>
-      <sub>单张图片生成动态视频</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="https://img.icons8.com/fluency/96/transition.png" width="48"><br>
-      <b>🔄 首尾帧生视频</b><br>
-      <sub>两帧图片生成过渡动画</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="https://img.icons8.com/fluency/96/video-playlist.png" width="48"><br>
-      <b>🎥 参考生视频</b><br>
-      <sub>参考视频生成新场景</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="https://img.icons8.com/fluency/96/paint-palette.png" width="48"><br>
-      <b>🎨 文生图</b><br>
-      <sub>文字描述生成图片</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="https://img.icons8.com/fluency/96/edit-image.png" width="48"><br>
-      <b>✂️ 图像编辑</b><br>
-      <sub>AI智能修图与融合</sub>
-    </td>
-  </tr>
-</table>
+| 功能 | 说明 |
+|------|------|
+| **首帧生视频** | 单张图片生成动态视频 |
+| **首尾帧生视频** | 两帧图片生成过渡动画 |
+| **参考生视频** | 参考视频生成新场景 |
+| **文生图** | 文字描述生成图片 |
+| **图像编辑** | AI 智能修图与融合 |
 
-### 🎯 核心亮点
+### 核心亮点
 
-- **📁 工程管理** - 类似 VSCode 的项目管理体验，自动组织输入/输出文件
-- **🖱️ 拖拽支持** - 从资源管理器拖拽图片，支持外部文件导入
-- **🖼️ 内置预览** - 图片查看器支持缩放，视频播放器即时预览
-- **⚡ 实时监控** - 任务进度实时更新，支持历史记录管理
-- **🎛️ 多模型支持** - 万相2.5、万相2.2、通义千问等多种模型
+- **工程管理** - 类似 VSCode 的项目管理体验，自动组织输入/输出文件
+- **拖拽支持** - 从资源管理器拖拽图片，支持外部文件导入
+- **内置预览** - 图片查看器支持缩放，视频播放器即时预览
+- **实时监控** - 任务进度实时更新，支持历史记录管理
+- **多模型支持** - 万相2.6、万相2.5、万相2.2、通义千问等多种模型
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 环境要求
 
-| 依赖 | 版本要求 |
-|------|----------|
-| Python | 3.7+ |
-| PyQt5 | 5.15+ |
-| 操作系统 | macOS / Windows / Linux |
+- Python 3.7+
+- PyQt5 5.15+
+- macOS / Windows / Linux
 
 ### 安装步骤
 
@@ -95,79 +71,44 @@ run.bat
 **方式二：手动安装**
 
 ```bash
-# 1. 克隆项目
+# 克隆项目
 git clone https://github.com/your-username/drawloong.git
 cd drawloong
 
-# 2. 创建虚拟环境
+# 创建虚拟环境
 python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 3. 安装依赖
+# 安装依赖
 pip install -r requirements.txt
 
-# 4. 启动应用
+# 启动应用
 python main.py
 ```
 
 ### 配置 API 密钥
 
-**推荐方式：在应用界面中配置**
-
-1. 访问 [阿里云 DashScope](https://dashscope.console.aliyun.com/)
-2. 注册/登录账号
-3. 创建 API Key
-4. 启动应用后，点击右上角"⚙ 设置"按钮
-5. 在设置页面输入 API 密钥并保存
-
-**备用方式：使用环境变量（可选）**
-
-如果需要通过环境变量配置：
-```bash
-# 创建 .env 文件
-cp .env.example .env
-# 编辑 .env 文件，填入 DashScope API 密钥
-```
-
-> 💡 **提示**：应用会优先使用界面配置的密钥，环境变量作为备用方式
+1. 访问 [阿里云 DashScope](https://dashscope.console.aliyun.com/) 获取 API Key
+2. 启动应用后，点击「设置」按钮
+3. 在设置页面输入 API 密钥并保存
 
 ---
 
-## 📖 使用指南
+## 使用指南
 
 ### 创建工程
 
-
-```
-1. 启动应用 → 点击「新建工程」
-2. 输入工程名称，选择保存位置
-3. 点击「创建」完成
-```
+启动应用 → 点击「新建工程」→ 输入工程名称 → 选择保存位置 → 创建
 
 ### 工程结构
 
 ```
 我的工程/
-├── 📂 pictures/        # 图集（输入图片）
-├── 📂 videos/          # 视频集（输出视频）
-├── 📄 project.json     # 工程配置
-└── 📄 tasks.json       # 任务记录
+├── pictures/        # 图集（输入图片）
+├── videos/          # 视频集（输出视频）
+├── project.json     # 工程配置
+└── tasks.json       # 任务记录
 ```
-
-> 💡 **说明**：
-> - `pictures/` - 存放输入的图片素材，在资源管理器中显示为"图集"
->   - 支持格式：.png, .jpg, .jpeg, .bmp, .gif, .webp
->   - 只显示图片文件，视频文件会被自动过滤
-> - `videos/` - 存放生成的视频文件，在资源管理器中显示为"视频集"
->   - 支持格式：.mp4, .avi, .mov, .mkv, .flv, .wmv
->   - 只显示视频文件，图片文件会被自动过滤
-> - `project.json` - 保存工程的配置信息
-> - `tasks.json` - 记录该工程的所有任务历史
-
-> 🎯 **文件类型控制**：
-> - 拖拽导入时，图片文件自动添加到图集，视频文件自动添加到视频集
-> - 资源管理器会自动过滤不匹配的文件类型，确保图集只显示图片，视频集只显示视频
-> - 视频文件会显示第一帧作为预览缩略图
 
 ### 功能使用
 
@@ -175,58 +116,32 @@ cp .env.example .env
 |------|----------|
 | **首帧生视频** | 上传图片 → 填写提示词 → 选择模型/分辨率 → 生成 |
 | **首尾帧生视频** | 上传首帧+尾帧 → 描述过渡效果 → 生成动画 |
-| **参考生视频** | 上传参考视频 → 使用character1/2描述 → 生成新场景 |
+| **参考生视频** | 上传参考视频 → 使用 character1/2 描述 → 生成新场景 |
 | **文生图** | 输入文字描述 → 选择风格/尺寸 → 生成图片 |
-| **图像编辑** | 上传图片 → 输入编辑指令 → AI处理 |
+| **图像编辑** | 上传图片 → 输入编辑指令 → AI 处理 |
 
 ---
 
-## 🏗️ 项目结构
+## 项目结构
 
 ```
 drawloong/
 ├── main.py                 # 应用入口
 ├── requirements.txt        # Python 依赖
-├── wanx.spec              # PyInstaller 打包配置
-│
-├── config/                # ⚙️ 配置管理
-│   └── settings.py
-│
-├── core/                  # 🧠 核心业务
-│   ├── api_client.py      # DashScope API 客户端
-│   ├── task_manager.py    # 任务管理
-│   └── project_manager.py # 工程管理
-│
-├── ui/                    # 🎨 用户界面
-│   ├── main_window.py     # 主窗口
-│   ├── upload_widget.py   # 上传组件
-│   ├── config_panel.py    # 配置面板
-│   ├── task_list.py       # 任务列表
-│   ├── project_explorer.py# 资源管理器
-│   ├── image_viewer.py    # 图片查看器
-│   ├── video_viewer.py    # 视频浏览器
-│   ├── text_to_image_widget.py      # 文生图
-│   ├── image_edit_widget.py         # 图像编辑
-│   ├── keyframe_to_video_widget.py  # 首尾帧生视频
-│   └── reference_video_to_video_widget.py  # 参考生视频
-│
-└── themes/                # 🎭 主题配置
-    └── themes.py
+├── config/                 # 配置管理
+├── core/                   # 核心业务（API、任务、工程管理）
+├── ui/                     # 用户界面组件
+└── themes/                 # 主题配置
 ```
 
 ---
 
-## 📦 打包发布
+## 打包发布
 
 ### Windows
 
 ```batch
-# 使用打包脚本（推荐）
 build_windows.bat
-
-# 或手动打包
-pip install pyinstaller
-pyinstaller drawloong_windows.spec
 ```
 
 输出：`dist\Drawloong\Drawloong.exe`
@@ -234,41 +149,24 @@ pyinstaller drawloong_windows.spec
 ### macOS
 
 ```bash
-# 使用打包脚本（推荐）
-chmod +x build_mac.sh
 ./build_mac.sh
-
-# 或手动打包
-pip install pyinstaller
-pyinstaller wanx.spec
 ```
 
 输出：`dist/Drawloong.app`
 
-### Linux
-
-```bash
-pip install pyinstaller
-pyinstaller wanx.spec
-```
-
-输出：`dist/Drawloong/Drawloong`
-
-> 📚 **详细说明**：查看 [BUILD_GUIDE.md](BUILD_GUIDE.md) 获取完整的打包指南，包括代码签名、创建安装包、常见问题等
+详细说明请查看 [BUILD_GUIDE.md](BUILD_GUIDE.md)
 
 ---
 
-## 🔐 安全性
+## 安全性
 
-| 特性 | 说明 |
-|------|------|
-| **密钥存储** | 使用系统安全存储，支持界面配置 |
-| **数据隐私** | 所有数据本地存储，仅 API 调用时上传 |
-| **工程隔离** | 各工程数据独立，互不干扰 |
+- **密钥存储** - 使用系统安全存储，支持界面配置
+- **数据隐私** - 所有数据本地存储，仅 API 调用时上传
+- **工程隔离** - 各工程数据独立，互不干扰
 
 ---
 
-## 🤝 贡献指南
+## 贡献指南
 
 欢迎提交 Issue 和 Pull Request！
 
@@ -278,119 +176,73 @@ pyinstaller wanx.spec
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 提交 Pull Request
 
-### 开发规范
-
-- 遵循 PEP 8 代码风格
-- 使用有意义的变量和函数命名
-- 添加必要的注释和文档
-- 确保代码通过测试
-
 ---
 
-## 📄 开源许可
+## 开源许可
 
 本项目采用 **GNU General Public License v3.0** 开源协议。
-
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ### 第三方组件
 
 | 组件 | 许可证 | 用途 |
 |------|--------|------|
-| [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) | GPL-3.0 | GUI 框架 |
-| [requests](https://requests.readthedocs.io/) | Apache-2.0 | 网络请求 |
-| [python-dotenv](https://github.com/theskumar/python-dotenv) | BSD-3-Clause | 环境变量 |
-| [opencv-python](https://github.com/opencv/opencv-python) | MIT | 视频缩略图生成 |
-
-详见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE) 文件。
+| PyQt5 | GPL-3.0 | GUI 框架 |
+| QFluentWidgets | GPL-3.0 | Fluent UI 组件 |
+| requests | Apache-2.0 | 网络请求 |
+| opencv-python | MIT | 视频缩略图生成 |
 
 ---
 
-## 📈 更新日志
+## 更新日志
 
 ### v1.16.1 (2025-12-19)
-- 🎨 **全面 UI 优化** - 参考视频生成页面和首尾帧生成页面 Fluent 化
-- 📐 **四象限布局** - 统一布局风格：左上素材预览、左下配置、右上提示词、右下视频预览
-- 🔧 **Fluent 图标** - 使用 Fluent Design 图标替代 emoji 拟物图标
-- 🐛 **修复重复下载** - 修复任务完成时视频被下载两次的问题
-- 🐛 **修复 ComboBox** - 修复 QFluentWidgets ComboBox 兼容性问题
-- 🐛 **修复任务状态** - 修复任务状态类型（字符串/枚举）兼容性问题
+- 全面 UI 优化 - 参考视频生成页面和首尾帧生成页面 Fluent 化
+- 四象限布局 - 统一布局风格
+- 修复任务完成时视频被下载两次的问题
+- 修复 QFluentWidgets ComboBox 兼容性问题
 
 ### v1.16.0 (2025-12-18)
-- 🎨 全新 QFluent UI 界面美化
-- ✨ 新增 Fluent Design 风格主题系统
-- 🖼️ 优化图片查看器和视频播放器界面
-- 📁 新增抽屉式项目资源管理器和任务列表
-- 🎯 新增 Fluent 风格状态栏
-- 💬 新增统一消息提示助手
-- 🔧 优化设置对话框和欢迎页面样式
-- 📦 新增视觉常量配置文件
+- 全新 QFluent UI 界面美化
+- 新增 Fluent Design 风格主题系统
+- 新增抽屉式项目资源管理器和任务列表
+- 新增 Fluent 风格状态栏
 
 ### v1.15.2 (2025-12-16)
-- 🎯 图集和视频集严格文件类型控制
-- 📁 图集只能添加和显示图片文件（.png, .jpg, .jpeg, .bmp, .gif, .webp）
-- 🎬 视频集只能添加和显示视频文件（.mp4, .avi, .mov, .mkv, .flv, .wmv）
-- 🖼️ 拖拽导入时自动识别文件类型并放入正确的文件夹
-- 📦 添加 opencv-python 依赖用于视频缩略图生成
+- 图集和视频集严格文件类型控制
+- 拖拽导入时自动识别文件类型
 
 ### v1.14.0 (2025-12-15)
-- 🌟 新增万相2.6模型支持（最新模型）
-- ⏱️ 支持5秒、10秒、15秒三种时长选择
-- 🎬 新增智能镜头类型选择：多镜头/单镜头
-- 📺 分辨率支持720P和1080P（2.6模型不支持480P）
-- 📚 添加万相2.6快速使用指南
-
-### v1.13.0 (2025-12-15)
-- ✨ 首尾帧页面图片预览区域增大，显示更清晰
-- ✨ 视频集点击播放功能：在首尾帧页面点击视频时在该页面播放
-- 🎨 资源管理器界面优化：隐藏分割器手柄，界面更简洁
-- 🎯 图集和视频集文件过滤：图集只显示图片，视频集只显示视频
-- 🖼️ 视频预览图功能：视频集显示视频第一帧作为预览图
-- 🐛 修复Task对象属性错误
-
-### v1.12.0 (2025-12-14)
-- ✨ 新增图集拖拽到各功能页面
-- ✨ 首帧生成视频新增双按钮选择
-- 🔧 配置面板添加滚动条
-- 🐛 修复视频时长参数传递问题
-
-### v1.11.0 (2025-12-12)
-- ✨ 提示词展示功能优化
-
-### v1.10.0 (2025-12-12)
-- ✨ 智能错误提示系统
+- 新增万相2.6模型支持
+- 支持5秒、10秒、15秒三种时长选择
+- 新增智能镜头类型选择
 
 <details>
 <summary>查看更多版本</summary>
 
-### v1.8.0 - v1.9.0
-- 新增万相文生图模型
-- API 差异化处理优化
+### v1.13.0 (2025-12-15)
+- 首尾帧页面图片预览区域增大
+- 视频集点击播放功能
+- 资源管理器界面优化
 
-### v1.5.0 - v1.7.0
-- 多标签页架构
-- 文生图异步调用
-- 万相2.5 Preview 模型
+### v1.12.0 (2025-12-14)
+- 新增图集拖拽到各功能页面
+- 首帧生成视频新增双按钮选择
 
-### v1.3.0 - v1.4.0
-- 拖拽与文件浏览功能
-- 视频浏览器增强
+### v1.11.0 (2025-12-12)
+- 提示词展示功能优化
 
-### v1.2.0
-- 工程管理系统
-
-### v1.1.0
-- 界面配置 API 密钥
+### v1.10.0 (2025-12-12)
+- 智能错误提示系统
 
 </details>
 
 ---
 
-## 🙏 致谢
+## 致谢
 
 - [阿里云 DashScope](https://dashscope.console.aliyun.com/) - AI 能力支持
 - [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) - GUI 框架
-- 所有贡献者和用户
+- [QFluentWidgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) - Fluent UI 组件
 
 ---
 
