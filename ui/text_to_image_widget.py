@@ -15,6 +15,16 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 from PyQt5.QtGui import QPixmap
 
+try:
+    from qfluentwidgets import (
+        PushButton, PrimaryPushButton, FluentIcon,
+        ComboBox, SwitchButton, BodyLabel, SpinBox,
+        TextEdit
+    )
+    FLUENT_AVAILABLE = True
+except ImportError:
+    FLUENT_AVAILABLE = False
+
 
 class TextToImageWorker(QThread):
     """文生图工作线程（异步模式）"""
@@ -460,12 +470,12 @@ class ImageGalleryWidget(QWidget):
         self.gallery_layout.setContentsMargins(10, 10, 10, 10)
         
         # 空状态提示
-        self.empty_label = QLabel("👤 暂无生成的图片")
+        self.empty_label = QLabel("暂无生成的图片")
         self.empty_label.setAlignment(Qt.AlignCenter)
         self.empty_label.setStyleSheet("""
             QLabel {
                 color: #999;
-                font-size: 18px;
+                font-size: 16px;
                 padding: 50px;
             }
         """)
@@ -591,7 +601,7 @@ class ImageGalleryWidget(QWidget):
         
         # 模型信息
         if model:
-            model_label = QLabel(f"🦾 模型：{model}")
+            model_label = QLabel(f"模型: {model}")
             model_label.setStyleSheet("""
                 color: #333;
                 font-size: 10px;
@@ -602,7 +612,7 @@ class ImageGalleryWidget(QWidget):
         
         # 尺寸信息
         if size:
-            size_label = QLabel(f"📏 尺寸：{size}")
+            size_label = QLabel(f"尺寸: {size}")
             size_label.setStyleSheet("""
                 color: #666;
                 font-size: 10px;
@@ -612,7 +622,7 @@ class ImageGalleryWidget(QWidget):
         
         # Seed信息
         if seed:
-            seed_label = QLabel(f"🎲 Seed：{seed}")
+            seed_label = QLabel(f"Seed: {seed}")
             seed_label.setStyleSheet("""
                 color: #666;
                 font-size: 10px;
@@ -623,7 +633,7 @@ class ImageGalleryWidget(QWidget):
         
         # 原始提示词
         if orig_prompt:
-            orig_title = QLabel("📝 原始提示词：")
+            orig_title = QLabel("原始提示词:")
             orig_title.setStyleSheet("""
                 color: #666;
                 font-size: 10px;
@@ -648,7 +658,7 @@ class ImageGalleryWidget(QWidget):
         
         # 反向提示词
         if negative_prompt:
-            neg_title = QLabel("⛔ 反向提示词：")
+            neg_title = QLabel("反向提示词:")
             neg_title.setStyleSheet("""
                 color: #dc3545;
                 font-size: 10px;
@@ -673,7 +683,7 @@ class ImageGalleryWidget(QWidget):
         
         # 改写提示词
         if actual_prompt:
-            actual_title = QLabel("✨ 改写提示词：")
+            actual_title = QLabel("改写提示词:")
             actual_title.setStyleSheet("""
                 color: #28a745;
                 font-size: 10px;
@@ -895,49 +905,69 @@ class TextToImageWidget(QWidget):
         self.on_project_changed()
     
     def create_config_panel(self):
-        """创建配置面板"""
+        """创建配置面板 - 与首帧生成视频风格统一"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
         
-        group_box = QGroupBox("文生图配置")
-        group_layout = QVBoxLayout(group_box)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(5, 5, 15, 5)
         
         # 提示词
-        prompt_label = QLabel("描述文本:")
-        prompt_label.setStyleSheet("font-weight: bold;")
-        group_layout.addWidget(prompt_label)
+        if FLUENT_AVAILABLE:
+            prompt_label = BodyLabel("描述文本")
+        else:
+            prompt_label = QLabel("描述文本:")
+            prompt_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(prompt_label)
         
         self.prompt_edit = QTextEdit()
         self.prompt_edit.setPlaceholderText("描述你想要生成的图片内容...\n例如：一副典雅庄重的对联悬挂于厅堂之中...")
-        self.prompt_edit.setMinimumHeight(150)
-        group_layout.addWidget(self.prompt_edit)
+        self.prompt_edit.setMinimumHeight(120)
+        scroll_layout.addWidget(self.prompt_edit)
         
         # 反向提示词
-        neg_prompt_label = QLabel("反向提示词:")
-        neg_prompt_label.setStyleSheet("font-weight: bold;")
-        group_layout.addWidget(neg_prompt_label)
+        scroll_layout.addSpacing(8)
+        if FLUENT_AVAILABLE:
+            neg_prompt_label = BodyLabel("反向提示词")
+        else:
+            neg_prompt_label = QLabel("反向提示词:")
+            neg_prompt_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(neg_prompt_label)
         
         self.neg_prompt_edit = QTextEdit()
         self.neg_prompt_edit.setPlaceholderText("描述不希望出现的内容...")
         self.neg_prompt_edit.setMaximumHeight(80)
-        group_layout.addWidget(self.neg_prompt_edit)
+        scroll_layout.addWidget(self.neg_prompt_edit)
         
         # 模型选择
-        model_label = QLabel("模型:")
-        model_label.setStyleSheet("font-weight: bold;")
-        group_layout.addWidget(model_label)
+        scroll_layout.addSpacing(15)
+        if FLUENT_AVAILABLE:
+            model_label = BodyLabel("模型")
+        else:
+            model_label = QLabel("模型:")
+            model_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(model_label)
         
+        # 使用QComboBox以保证userData功能正常
         self.model_combo = QComboBox()
-        # 万相模型（推荐）
-        self.model_combo.addItem("🌟 万相2.6（最新）", "wan2.6-t2i")
+        self.model_combo.setMinimumHeight(36)
+        # 万相模型（推荐）- 使用扁平图标风格
+        self.model_combo.addItem("万相2.6（最新）", "wan2.6-t2i")
         self.model_combo.addItem("万相2.5 Preview", "wan2.5-t2i-preview")
-        self.model_combo.addItem("万相2.2 极速版", "wan2.2-t2i-flash")
+        self.model_combo.addItem("万相2.2 极速版（推荐）", "wan2.2-t2i-flash")
         self.model_combo.addItem("万相2.2 专业版", "wan2.2-t2i-plus")
         # 通义千问模型
         self.model_combo.addItem("通义千问Plus", "qwen-image-plus")
         self.model_combo.addItem("通义千问标准版", "qwen-image")
         self.model_combo.currentIndexChanged.connect(self.on_model_changed)
-        group_layout.addWidget(self.model_combo)
+        scroll_layout.addWidget(self.model_combo)
         
         # 模型说明
         self.model_desc_label = QLabel("")
@@ -951,91 +981,132 @@ class TextToImageWidget(QWidget):
             }
         """)
         self.model_desc_label.setWordWrap(True)
-        group_layout.addWidget(self.model_desc_label)
+        scroll_layout.addWidget(self.model_desc_label)
         
         # 尺寸选择
-        size_label = QLabel("图片尺寸:")
-        size_label.setStyleSheet("font-weight: bold;")
-        group_layout.addWidget(size_label)
+        scroll_layout.addSpacing(8)
+        if FLUENT_AVAILABLE:
+            size_label = BodyLabel("图片尺寸")
+        else:
+            size_label = QLabel("图片尺寸:")
+            size_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(size_label)
         
+        # 使用QComboBox以保证userData功能正常
         self.size_combo = QComboBox()
-        group_layout.addWidget(self.size_combo)
+        self.size_combo.setMinimumHeight(36)
+        scroll_layout.addWidget(self.size_combo)
         
         # 初始化默认模型的尺寸选项
         self.on_model_changed(0)
         
         # Seed设置
-        seed_layout = QHBoxLayout()
-        seed_label = QLabel("Seed (空表示随机):")
-        seed_label.setStyleSheet("font-weight: bold;")
-        seed_layout.addWidget(seed_label)
+        scroll_layout.addSpacing(8)
+        if FLUENT_AVAILABLE:
+            seed_label = BodyLabel("Seed（空表示随机）")
+        else:
+            seed_label = QLabel("Seed（空表示随机）:")
+            seed_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(seed_label)
         
         from PyQt5.QtWidgets import QLineEdit
         from PyQt5.QtGui import QRegExpValidator
         from PyQt5.QtCore import QRegExp
         self.seed_edit = QLineEdit()
         self.seed_edit.setPlaceholderText("留空随机生成，或输入正整数")
+        self.seed_edit.setMinimumHeight(36)
         # 使用正则验证，只允许数字
         self.seed_edit.setValidator(QRegExpValidator(QRegExp("[0-9]*")))
-        seed_layout.addWidget(self.seed_edit)
-        group_layout.addLayout(seed_layout)
+        scroll_layout.addWidget(self.seed_edit)
         
         # 智能改写选项
-        self.prompt_extend_check = QCheckBox("启用提示词智能改写")
-        self.prompt_extend_check.setChecked(True)
-        group_layout.addWidget(self.prompt_extend_check)
+        scroll_layout.addSpacing(8)
+        extend_layout = QHBoxLayout()
+        extend_layout.setSpacing(12)
+        
+        if FLUENT_AVAILABLE:
+            extend_label = BodyLabel("启用提示词智能改写")
+            extend_layout.addWidget(extend_label, 1)
+            self.prompt_extend_check = SwitchButton()
+            self.prompt_extend_check.setChecked(True)
+            extend_layout.addWidget(self.prompt_extend_check)
+        else:
+            self.prompt_extend_check = QCheckBox("启用提示词智能改写")
+            self.prompt_extend_check.setChecked(True)
+            self.prompt_extend_check.setMinimumHeight(30)
+            extend_layout.addWidget(self.prompt_extend_check)
+        
+        scroll_layout.addLayout(extend_layout)
         
         # 批量生成数量
-        batch_layout = QHBoxLayout()
-        batch_label = QLabel("生成数量:")
-        batch_label.setStyleSheet("font-weight: bold;")
-        batch_layout.addWidget(batch_label)
+        scroll_layout.addSpacing(8)
+        if FLUENT_AVAILABLE:
+            batch_label = BodyLabel("生成数量")
+        else:
+            batch_label = QLabel("生成数量:")
+            batch_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(batch_label)
         
-        self.batch_spin = QSpinBox()
+        if FLUENT_AVAILABLE:
+            self.batch_spin = SpinBox()
+        else:
+            self.batch_spin = QSpinBox()
         self.batch_spin.setMinimum(1)
         self.batch_spin.setMaximum(4)  # 最多4个
         self.batch_spin.setValue(1)
         self.batch_spin.setToolTip("一次最多生成4张图片")
-        batch_layout.addWidget(self.batch_spin)
-        batch_layout.addStretch()
-        group_layout.addLayout(batch_layout)
+        self.batch_spin.setMinimumHeight(36)
+        scroll_layout.addWidget(self.batch_spin)
         
         # 生成按钮
-        self.generate_btn = QPushButton("生成图片")
-        self.generate_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 5px;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-            QPushButton:disabled {
-                background-color: #ccc;
-            }
-        """)
+        scroll_layout.addSpacing(12)
+        if FLUENT_AVAILABLE:
+            self.generate_btn = PrimaryPushButton(FluentIcon.PLAY, "生成图片")
+        else:
+            self.generate_btn = QPushButton("生成图片")
+            self.generate_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #28a745;
+                    color: white;
+                    border: none;
+                    padding: 12px;
+                    border-radius: 5px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #218838;
+                }
+                QPushButton:disabled {
+                    background-color: #ccc;
+                }
+            """)
         self.generate_btn.clicked.connect(self.on_generate_clicked)
-        group_layout.addWidget(self.generate_btn)
+        self.generate_btn.setMinimumHeight(48)
+        scroll_layout.addWidget(self.generate_btn)
         
         # 状态标签
-        self.status_label = QLabel("")
-        self.status_label.setStyleSheet("""
-            QLabel {
-                color: #666;
-                font-size: 12px;
-                padding: 5px;
-            }
-        """)
+        if FLUENT_AVAILABLE:
+            self.status_label = BodyLabel("")
+            self.status_label.setStyleSheet("color: #888; font-size: 12px;")
+        else:
+            self.status_label = QLabel("")
+            self.status_label.setStyleSheet("""
+                QLabel {
+                    color: #666;
+                    font-size: 11px;
+                    padding: 8px;
+                    background: #f8f9fa;
+                    border-radius: 4px;
+                }
+            """)
+        self.status_label.setMinimumHeight(40)
         self.status_label.setWordWrap(True)
-        group_layout.addWidget(self.status_label)
+        scroll_layout.addWidget(self.status_label)
         
-        layout.addWidget(group_box)
-        layout.addStretch()
+        scroll_layout.addStretch()
+        scroll_area.setWidget(scroll_content)
+        layout.addWidget(scroll_area)
         
         return widget
     

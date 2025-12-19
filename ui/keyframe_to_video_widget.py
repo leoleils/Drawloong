@@ -135,7 +135,7 @@ class KeyframeVideoWorker(QThread):
     def run(self):
         """执行生成任务"""
         try:
-            self.progress.emit("📤 正在提交任务...")
+            self.progress.emit("正在提交任务...")
             
             # 读取并编码图片
             with open(self.first_frame_path, 'rb') as f:
@@ -164,7 +164,7 @@ class KeyframeVideoWorker(QThread):
             
             # 获取任务ID
             task_id = result['output']['task_id']
-            self.progress.emit(f"⏳ 任务已提交 (ID: {task_id})")
+            self.progress.emit(f"任务已提交 (ID: {task_id})")
             
             # 轮询任务状态
             max_retries = 180  # 最多轮询180次（约15分钟）
@@ -174,7 +174,7 @@ class KeyframeVideoWorker(QThread):
                 time.sleep(5)  # 每5秒查询一次
                 retry_count += 1
                 
-                self.progress.emit(f"🔄 正在生成视频... ({retry_count}/{max_retries})")
+                self.progress.emit(f"正在生成视频... ({retry_count}/{max_retries})")
                 
                 # 查询任务状态
                 task_result = self.api_client.query_task(task_id)
@@ -190,7 +190,7 @@ class KeyframeVideoWorker(QThread):
                         self.error.emit("视频URL为空")
                         return
                     
-                    self.progress.emit("📥 正在下载视频...")
+                    self.progress.emit("正在下载视频...")
                     
                     # 下载视频
                     video_path = self.api_client.download_video(video_url, self.output_folder)
@@ -501,10 +501,10 @@ class KeyframeToVideoWidget(QWidget):
         
         # 状态标签
         if FLUENT_AVAILABLE:
-            self.status_label = BodyLabel("💡 请先选择首帧和尾帧图片")
+            self.status_label = BodyLabel("请先选择首帧和尾帧图片")
             self.status_label.setStyleSheet("color: #888; font-size: 12px;")
         else:
-            self.status_label = QLabel("💡 请先选择首帧和尾帧图片")
+            self.status_label = QLabel("请先选择首帧和尾帧图片")
             self.status_label.setStyleSheet("""
                 QLabel {
                     color: #666;
@@ -657,7 +657,7 @@ class KeyframeToVideoWidget(QWidget):
     def update_status(self):
         """更新状态提示"""
         if self.first_frame_path and self.last_frame_path:
-            self.status_label.setText("✅ 已选择首帧和尾帧，可以开始生成")
+            self.status_label.setText("已选择首帧和尾帧，可以开始生成")
             self.status_label.setStyleSheet("""
                 QLabel {
                     color: #28a745;
@@ -668,9 +668,9 @@ class KeyframeToVideoWidget(QWidget):
                 }
             """)
         elif self.first_frame_path:
-            self.status_label.setText("⚠️ 请选择尾帧图片")
+            self.status_label.setText("请选择尾帧图片")
         elif self.last_frame_path:
-            self.status_label.setText("⚠️ 请选择首帧图片")
+            self.status_label.setText("请选择首帧图片")
     
     def on_generate_clicked(self):
         """生成按钮点击"""
@@ -727,7 +727,7 @@ class KeyframeToVideoWidget(QWidget):
         """生成完成"""
         self.generate_btn.setEnabled(True)
         self.generate_btn.setText("开始生成")
-        self.status_label.setText("✅ 视频生成成功！")
+        self.status_label.setText("视频生成成功！")
         
         # 加载视频到视频查看器
         self.video_viewer.load_video(video_path)
@@ -756,7 +756,7 @@ class KeyframeToVideoWidget(QWidget):
                 item.widget().deleteLater()
         
         # 模型信息
-        model_label = QLabel(f"🤖 模型: {video_info.get('model', 'N/A')}")
+        model_label = QLabel(f"模型: {video_info.get('model', 'N/A')}")
         model_label.setStyleSheet("""
             QLabel {
                 color: #333;
@@ -770,7 +770,7 @@ class KeyframeToVideoWidget(QWidget):
         self.metadata_layout.addWidget(model_label)
         
         # 分辨率信息
-        resolution_label = QLabel(f"📺 分辨率: {video_info.get('resolution', 'N/A')}")
+        resolution_label = QLabel(f"分辨率: {video_info.get('resolution', 'N/A')}")
         resolution_label.setStyleSheet("""
             QLabel {
                 color: #333;
@@ -786,7 +786,7 @@ class KeyframeToVideoWidget(QWidget):
         
         # 首帧和尾帧信息
         frames_label = QLabel(
-            f"🎬 关键帧: {video_info.get('first_frame', 'N/A')} → {video_info.get('last_frame', 'N/A')}"
+            f"关键帧: {video_info.get('first_frame', 'N/A')} → {video_info.get('last_frame', 'N/A')}"
         )
         frames_label.setStyleSheet("""
             QLabel {
@@ -801,8 +801,8 @@ class KeyframeToVideoWidget(QWidget):
         self.metadata_layout.addWidget(frames_label)
         
         # 提示词扩展
-        prompt_extend_text = "✅ 已启用" if video_info.get('prompt_extend') else "❌ 未启用"
-        prompt_extend_label = QLabel(f"✨ 提示词扩展: {prompt_extend_text}")
+        prompt_extend_text = "已启用" if video_info.get('prompt_extend') else "未启用"
+        prompt_extend_label = QLabel(f"提示词扩展: {prompt_extend_text}")
         prompt_extend_label.setStyleSheet("""
             QLabel {
                 color: #333;
