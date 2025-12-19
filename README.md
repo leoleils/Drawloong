@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.16.0-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.16.1-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
@@ -307,6 +307,14 @@ pyinstaller wanx.spec
 ---
 
 ## 📈 更新日志
+
+### v1.16.1 (2025-12-19)
+- 🎨 **全面 UI 优化** - 参考视频生成页面和首尾帧生成页面 Fluent 化
+- 📐 **四象限布局** - 统一布局风格：左上素材预览、左下配置、右上提示词、右下视频预览
+- 🔧 **Fluent 图标** - 使用 Fluent Design 图标替代 emoji 拟物图标
+- 🐛 **修复重复下载** - 修复任务完成时视频被下载两次的问题
+- 🐛 **修复 ComboBox** - 修复 QFluentWidgets ComboBox 兼容性问题
+- 🐛 **修复任务状态** - 修复任务状态类型（字符串/枚举）兼容性问题
 
 ### v1.16.0 (2025-12-18)
 - 🎨 全新 QFluent UI 界面美化

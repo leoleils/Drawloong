@@ -68,19 +68,25 @@ class TaskMonitorThread(QThread):
                 if status == 'SUCCEEDED':
                     video_url = task_data.get('video_url')
                     if video_url:
-                        # 下载视频到指定输出文件夹
-                        output_path = os.path.join(
-                            self.output_folder,
-                            f"{self.task_id}.mp4"
-                        )
-                        try:
-                            downloaded_path = self.api_client.download_video(video_url, output_path)
-                            updates['output_path'] = downloaded_path
+                        # 检查任务是否已经有输出路径（说明已被其他地方下载）
+                        if task.output_path and os.path.exists(task.output_path):
+                            # 已经下载过，只更新状态
                             updates['video_url'] = video_url
                             updates['completed_at'] = datetime.now().isoformat()
-                        except Exception as e:
-                            print(f"下载视频失败: {e}")
-                            updates['error'] = str(e)
+                        else:
+                            # 下载视频到指定输出文件夹
+                            output_path = os.path.join(
+                                self.output_folder,
+                                f"{self.task_id}.mp4"
+                            )
+                            try:
+                                downloaded_path = self.api_client.download_video(video_url, output_path)
+                                updates['output_path'] = downloaded_path
+                                updates['video_url'] = video_url
+                                updates['completed_at'] = datetime.now().isoformat()
+                            except Exception as e:
+                                print(f"下载视频失败: {e}")
+                                updates['error'] = str(e)
                 
                 elif status == 'FAILED':
                     updates['error'] = message
