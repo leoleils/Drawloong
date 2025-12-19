@@ -8,7 +8,7 @@
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-    QFileDialog, QListWidgetItem, QWidget
+    QFileDialog, QListWidgetItem, QWidget, QTabWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon
@@ -18,7 +18,7 @@ import os
 from qfluentwidgets import (
     LineEdit, TextEdit, PrimaryPushButton, PushButton,
     CardWidget, SubtitleLabel, BodyLabel, CaptionLabel,
-    ListWidget, TabWidget, FluentIcon, InfoBar, InfoBarPosition
+    ListWidget, FluentIcon, InfoBar, InfoBarPosition
 )
 
 
@@ -201,8 +201,8 @@ class OpenProjectDialog(QDialog):
         title_label = SubtitleLabel("打开工程")
         layout.addWidget(title_label)
         
-        # 选项卡
-        tabs = TabWidget()
+        # 选项卡（使用 PyQt5 原生 QTabWidget）
+        tabs = QTabWidget()
         
         # 最近工程标签页
         recent_widget = QWidget()
@@ -220,12 +220,10 @@ class OpenProjectDialog(QDialog):
         # 填充最近工程
         self.populate_recent_projects()
         
-        recent_widget.setObjectName("recentTab")
-        tabs.addSubInterface(recent_widget, "recentTab", "最近工程", FluentIcon.HISTORY)
+        tabs.addTab(recent_widget, "最近工程")
         
         # 浏览标签页
         browse_widget = QWidget()
-        browse_widget.setObjectName("browseTab")
         browse_layout = QVBoxLayout(browse_widget)
         browse_layout.setSpacing(12)
         browse_layout.setContentsMargins(16, 16, 16, 16)
@@ -238,7 +236,7 @@ class OpenProjectDialog(QDialog):
         browse_layout.addWidget(browse_btn)
         browse_layout.addStretch()
         
-        tabs.addSubInterface(browse_widget, "browseTab", "浏览", FluentIcon.FOLDER)
+        tabs.addTab(browse_widget, "浏览")
         
         layout.addWidget(tabs)
         
