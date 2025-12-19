@@ -41,7 +41,11 @@ class Task:
     def to_dict(self):
         """转换为字典"""
         data = asdict(self)
-        data['status'] = self.status.value
+        # 支持字符串和枚举两种类型
+        if isinstance(self.status, str):
+            data['status'] = self.status
+        else:
+            data['status'] = self.status.value
         return data
     
     @classmethod
@@ -55,8 +59,8 @@ class Task:
     
     def is_completed(self):
         """判断任务是否完成"""
-        return self.status in [TaskStatus.SUCCEEDED, TaskStatus.FAILED]
+        return self.status in [TaskStatus.SUCCEEDED, TaskStatus.FAILED, 'SUCCEEDED', 'FAILED']
     
     def is_success(self):
         """判断任务是否成功"""
-        return self.status == TaskStatus.SUCCEEDED
+        return self.status in [TaskStatus.SUCCEEDED, 'SUCCEEDED']

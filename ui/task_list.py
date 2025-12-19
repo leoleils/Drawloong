@@ -179,20 +179,21 @@ class TaskListWidget(QWidget):
         card_layout.addWidget(self.table)
         layout.addWidget(card)
     
-    def _get_status_icon(self, status: TaskStatus) -> FluentIcon:
+    def _get_status_icon(self, status) -> FluentIcon:
         """根据任务状态返回对应的 FluentIcon"""
-        if status == TaskStatus.SUCCEEDED:
+        # 支持字符串和枚举两种类型
+        if status == TaskStatus.SUCCEEDED or status == 'SUCCEEDED':
             return FluentIcon.COMPLETED
-        elif status == TaskStatus.FAILED:
+        elif status == TaskStatus.FAILED or status == 'FAILED':
             return FluentIcon.CLOSE
-        elif status == TaskStatus.RUNNING:
+        elif status == TaskStatus.RUNNING or status == 'RUNNING':
             return FluentIcon.SYNC
-        elif status == TaskStatus.PENDING:
+        elif status == TaskStatus.PENDING or status == 'PENDING':
             return FluentIcon.HISTORY
         else:
             return FluentIcon.INFO
     
-    def _get_status_text(self, status: TaskStatus) -> str:
+    def _get_status_text(self, status) -> str:
         """根据任务状态返回显示文本"""
         status_map = {
             TaskStatus.SUCCEEDED: "成功",
@@ -200,7 +201,16 @@ class TaskListWidget(QWidget):
             TaskStatus.RUNNING: "运行中",
             TaskStatus.PENDING: "等待中",
         }
-        return status_map.get(status, status.value)
+        # 如果是字符串，尝试转换为枚举
+        if isinstance(status, str):
+            str_map = {
+                'SUCCEEDED': "成功",
+                'FAILED': "失败",
+                'RUNNING': "运行中",
+                'PENDING': "等待中",
+            }
+            return str_map.get(status, status)
+        return status_map.get(status, status.value if hasattr(status, 'value') else str(status))
     
     def refresh_tasks(self):
         """刷新任务列表"""
