@@ -11,6 +11,7 @@ a = Analysis(
         ('.env.example', '.'),
         ('logo.png', '.'),
         ('welcome.png', '.'),
+        ('welcome-cover.png', '.'),
         ('launch_animation.mp4', '.'),
         ('themes', 'themes'),
         ('utils', 'utils'),

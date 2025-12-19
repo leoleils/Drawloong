@@ -20,6 +20,8 @@ if os.path.exists('logo.png'):
     datas.append(('logo.png', '.'))
 if os.path.exists('welcome.png'):
     datas.append(('welcome.png', '.'))
+if os.path.exists('welcome-cover.png'):
+    datas.append(('welcome-cover.png', '.'))
 
 # 添加开机动画视频
 if os.path.exists('launch_animation.mp4'):
