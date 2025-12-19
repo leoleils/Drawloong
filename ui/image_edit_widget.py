@@ -16,6 +16,16 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 from PyQt5.QtGui import QPixmap, QIcon, QDragEnterEvent, QDropEvent
 
+try:
+    from qfluentwidgets import (
+        PushButton, PrimaryPushButton, FluentIcon,
+        ComboBox, SwitchButton, BodyLabel, SpinBox,
+        TextEdit, TransparentToolButton, ToolButton
+    )
+    FLUENT_AVAILABLE = True
+except ImportError:
+    FLUENT_AVAILABLE = False
+
 
 class ImageEditWorker(QThread):
     """图像编辑工作线程"""
@@ -288,7 +298,7 @@ class ImageGalleryWidget(QWidget):
         self.gallery_layout.setContentsMargins(10, 10, 10, 10)
         
         # 空状态提示
-        self.empty_label = QLabel("🎨 暂无编辑结果")
+        self.empty_label = QLabel("暂无编辑结果")
         self.empty_label.setAlignment(Qt.AlignCenter)
         self.empty_label.setStyleSheet("""
             QLabel {
@@ -346,30 +356,31 @@ class ImageGalleryWidget(QWidget):
     def create_image_card(self, image_path, prompt='', model=''):
         """创建图片卡片"""
         card = QWidget()
+        card.setObjectName("galleryCard")
         card.setStyleSheet("""
-            QWidget {
-                background: white;
-                border-radius: 8px;
-                border: 1px solid #e0e0e0;
+            QWidget#galleryCard {
+                background: transparent;
+                border-radius: 6px;
+                border: 1px solid #dee2e6;
             }
-            QWidget:hover {
-                border: 1px solid #999;
+            QWidget#galleryCard:hover {
+                border: 1px solid #007bff;
             }
         """)
         card.setCursor(Qt.PointingHandCursor)
         
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(6)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(4)
         
         # 图片标签
         image_label = QLabel()
         pixmap = QPixmap(image_path)
         if not pixmap.isNull():
-            scaled_pixmap = pixmap.scaled(250, 250, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(500, 500, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             image_label.setPixmap(scaled_pixmap)
             image_label.setAlignment(Qt.AlignCenter)
-            image_label.setStyleSheet("border: none;")
+            image_label.setStyleSheet("background: transparent; border: none;")
         
         layout.addWidget(image_label)
         
@@ -378,8 +389,9 @@ class ImageGalleryWidget(QWidget):
         name_label = QLabel(filename)
         name_label.setAlignment(Qt.AlignCenter)
         name_label.setStyleSheet("""
-            color: #999; 
+            color: #666; 
             font-size: 10px;
+            background: transparent;
             border: none;
         """)
         name_label.setWordWrap(True)
@@ -412,40 +424,36 @@ class ImageEditWidget(QWidget):
     
     def setup_ui(self):
         """设置用户界面"""
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        # 主分割器 - 上下分割
-        main_splitter = QSplitter(Qt.Vertical)
+        # 主分割器 - 左右分割
+        main_splitter = QSplitter(Qt.Horizontal)
         
-        # 上部区域 - 左右分割
-        top_widget = QWidget()
-        top_layout = QHBoxLayout(top_widget)
-        top_layout.setContentsMargins(0, 0, 0, 0)
-        
-        top_splitter = QSplitter(Qt.Horizontal)
-        
-        # 左侧:配置面板(去除图片预览)
+        # 左侧：配置面板（窄）
         config_widget = self.create_config_panel()
-        top_splitter.addWidget(config_widget)
+        main_splitter.addWidget(config_widget)
         
-        # 右上:选择的图片预览
+        # 右侧：上下分割（选择图片 + 编辑结果）
+        right_splitter = QSplitter(Qt.Vertical)
+        
+        # 右上：选择的图片预览
         preview_widget = self.create_preview_panel()
-        top_splitter.addWidget(preview_widget)
+        right_splitter.addWidget(preview_widget)
         
-        top_splitter.setStretchFactor(0, 2)  # 配置面板占2份
-        top_splitter.setStretchFactor(1, 1)  # 预览面板占1份
-        
-        top_layout.addWidget(top_splitter)
-        main_splitter.addWidget(top_widget)
-        
-        # 下部:生成结果画廊
+        # 右下：生成结果画廊
         self.gallery = ImageGalleryWidget()
         self.gallery.image_clicked.connect(self.on_image_clicked)
-        main_splitter.addWidget(self.gallery)
+        right_splitter.addWidget(self.gallery)
         
-        main_splitter.setStretchFactor(0, 1)  # 上部占1份
-        main_splitter.setStretchFactor(1, 1)  # 下部占1份 (增加高度)
+        right_splitter.setStretchFactor(0, 2)  # 选择图片占2份
+        right_splitter.setStretchFactor(1, 2)  # 编辑结果占2份
+        
+        main_splitter.addWidget(right_splitter)
+        
+        # 设置左右比例：配置面板窄，右侧宽
+        main_splitter.setStretchFactor(0, 1)  # 配置面板占1份
+        main_splitter.setStretchFactor(1, 3)  # 右侧占3份
         
         layout.addWidget(main_splitter)
     
@@ -455,7 +463,7 @@ class ImageEditWidget(QWidget):
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(10, 10, 10, 10)
         
-        group_box = QGroupBox("选择的图片")
+        group_box = QGroupBox()
         group_layout = QVBoxLayout(group_box)
         
         # 图片预览区域
@@ -475,7 +483,10 @@ class ImageEditWidget(QWidget):
         self.preview_layout.setContentsMargins(8, 8, 8, 8)
         
         # 空状态提示
-        self.empty_preview_label = QLabel("🖼️ 暂无选择图片")
+        if FLUENT_AVAILABLE:
+            self.empty_preview_label = BodyLabel("暂无选择图片")
+        else:
+            self.empty_preview_label = QLabel("暂无选择图片")
         self.empty_preview_label.setAlignment(Qt.AlignCenter)
         self.empty_preview_label.setStyleSheet("""
             QLabel {
@@ -492,40 +503,51 @@ class ImageEditWidget(QWidget):
         # 图片操作按钮
         btn_layout = QHBoxLayout()
         
-        self.add_image_btn = QPushButton("添加图片")
+        if FLUENT_AVAILABLE:
+            self.add_image_btn = PushButton(FluentIcon.ADD, "添加图片")
+            self.add_image_btn.setMinimumHeight(36)
+        else:
+            self.add_image_btn = QPushButton("添加图片")
+            self.add_image_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #28a745;
+                    color: white;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #218838;
+                }
+            """)
         self.add_image_btn.clicked.connect(self.add_images)
-        self.add_image_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                padding: 6px 12px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-        """)
         btn_layout.addWidget(self.add_image_btn)
         
-        self.clear_images_btn = QPushButton("清空")
+        if FLUENT_AVAILABLE:
+            self.clear_images_btn = PushButton(FluentIcon.DELETE, "清空")
+            self.clear_images_btn.setMinimumHeight(36)
+        else:
+            self.clear_images_btn = QPushButton("清空")
+            self.clear_images_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #dc3545;
+                    color: white;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #c82333;
+                }
+            """)
         self.clear_images_btn.clicked.connect(self.clear_images)
-        self.clear_images_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #dc3545;
-                color: white;
-                padding: 6px 12px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #c82333;
-            }
-        """)
         btn_layout.addWidget(self.clear_images_btn)
         
         group_layout.addLayout(btn_layout)
         
         # 提示信息
-        self.mode_hint = QLabel("💡 单图编辑：选择1张图片")
+        if FLUENT_AVAILABLE:
+            self.mode_hint = BodyLabel("单图编辑：选择1张图片")
+        else:
+            self.mode_hint = QLabel("单图编辑：选择1张图片")
         self.mode_hint.setStyleSheet("""
             QLabel {
                 color: #666;
@@ -542,59 +564,83 @@ class ImageEditWidget(QWidget):
         return widget
     
     def create_config_panel(self):
-        """创建配置面板"""
+        """创建配置面板 - Fluent风格"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
         
-        group_box = QGroupBox("编辑配置")
-        group_layout = QVBoxLayout(group_box)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(5, 5, 15, 5)
         
         # 模式选择
-        mode_label = QLabel("编辑模式:")
-        mode_label.setStyleSheet("font-weight: bold;")
-        group_layout.addWidget(mode_label)
+        if FLUENT_AVAILABLE:
+            mode_label = BodyLabel("编辑模式")
+        else:
+            mode_label = QLabel("编辑模式:")
+            mode_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(mode_label)
         
         self.mode_combo = QComboBox()
-        self.mode_combo.addItem("🖼️ 单图编辑", "single")
-        self.mode_combo.addItem("🎭 多图融合", "multi")
+        self.mode_combo.setMinimumHeight(36)
+        self.mode_combo.addItem("单图编辑", "single")
+        self.mode_combo.addItem("多图融合", "multi")
         self.mode_combo.currentIndexChanged.connect(self.on_mode_changed)
-        group_layout.addWidget(self.mode_combo)
+        scroll_layout.addWidget(self.mode_combo)
         
         # 编辑提示词
-        prompt_label = QLabel("编辑描述:")
-        prompt_label.setStyleSheet("font-weight: bold;")
-        group_layout.addWidget(prompt_label)
+        scroll_layout.addSpacing(8)
+        if FLUENT_AVAILABLE:
+            prompt_label = BodyLabel("编辑描述")
+        else:
+            prompt_label = QLabel("编辑描述:")
+            prompt_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(prompt_label)
         
         self.prompt_edit = QTextEdit()
         self.prompt_edit.setPlaceholderText("描述想要的编辑效果...\n例如：生成一张符合深度图的图像，一辆红色的破旧的自行车停在一条泥泞的小路上，背景是茂密的原始森林")
-        self.prompt_edit.setMaximumHeight(80)  # 限制最大高度
-        group_layout.addWidget(self.prompt_edit)
+        self.prompt_edit.setMinimumHeight(100)
+        scroll_layout.addWidget(self.prompt_edit)
         
         # 反向提示词
-        neg_prompt_label = QLabel("反向提示词:")
-        neg_prompt_label.setStyleSheet("font-weight: bold;")
-        group_layout.addWidget(neg_prompt_label)
+        scroll_layout.addSpacing(8)
+        if FLUENT_AVAILABLE:
+            neg_prompt_label = BodyLabel("反向提示词")
+        else:
+            neg_prompt_label = QLabel("反向提示词:")
+            neg_prompt_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(neg_prompt_label)
         
         self.neg_prompt_edit = QTextEdit()
         self.neg_prompt_edit.setPlaceholderText("描述不希望出现的内容...")
-        self.neg_prompt_edit.setMaximumHeight(50)  # 进一步缩小
-        group_layout.addWidget(self.neg_prompt_edit)
+        self.neg_prompt_edit.setMaximumHeight(60)
+        scroll_layout.addWidget(self.neg_prompt_edit)
         
         # 模型选择
-        model_label = QLabel("模型:")
-        model_label.setStyleSheet("font-weight: bold;")
-        group_layout.addWidget(model_label)
+        scroll_layout.addSpacing(15)
+        if FLUENT_AVAILABLE:
+            model_label = BodyLabel("模型")
+        else:
+            model_label = QLabel("模型:")
+            model_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(model_label)
         
         self.model_combo = QComboBox()
+        self.model_combo.setMinimumHeight(36)
         # 万相2.6模型（最新，异步）
-        self.model_combo.addItem("🌟 wan2.6-image（最新）", "wan2.6-image")
+        self.model_combo.addItem("万相2.6（最新）", "wan2.6-image")
         # 万相2.5模型（异步）
-        self.model_combo.addItem("wan2.5-i2i-preview", "wan2.5-i2i-preview")
+        self.model_combo.addItem("万相2.5 Preview", "wan2.5-i2i-preview")
         # 通义千问模型（同步）
-        self.model_combo.addItem("qwen-image-edit-plus", "qwen-image-edit-plus")
-        self.model_combo.addItem("qwen-image-edit-plus-2025-10-30", "qwen-image-edit-plus-2025-10-30")
+        self.model_combo.addItem("通义千问 Edit Plus", "qwen-image-edit-plus")
+        self.model_combo.addItem("通义千问 Edit Plus 2025", "qwen-image-edit-plus-2025-10-30")
         self.model_combo.currentIndexChanged.connect(self.on_model_changed)
-        group_layout.addWidget(self.model_combo)
+        scroll_layout.addWidget(self.model_combo)
         
         # 模型说明
         self.model_desc_label = QLabel("支持单图编辑和多图融合，异步处理")
@@ -608,30 +654,39 @@ class ImageEditWidget(QWidget):
             }
         """)
         self.model_desc_label.setWordWrap(True)
-        group_layout.addWidget(self.model_desc_label)
+        scroll_layout.addWidget(self.model_desc_label)
         
         # 生成数量
-        n_layout = QHBoxLayout()
-        n_label = QLabel("生成数量:")
-        n_label.setStyleSheet("font-weight: bold;")
-        n_layout.addWidget(n_label)
+        scroll_layout.addSpacing(8)
+        if FLUENT_AVAILABLE:
+            n_label = BodyLabel("生成数量")
+        else:
+            n_label = QLabel("生成数量:")
+            n_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        scroll_layout.addWidget(n_label)
         
-        self.n_spinbox = QSpinBox()
+        if FLUENT_AVAILABLE:
+            self.n_spinbox = SpinBox()
+        else:
+            self.n_spinbox = QSpinBox()
         self.n_spinbox.setMinimum(1)
         self.n_spinbox.setMaximum(6)
         self.n_spinbox.setValue(2)
-        n_layout.addWidget(self.n_spinbox)
-        n_layout.addStretch()
-        
-        group_layout.addLayout(n_layout)
+        self.n_spinbox.setMinimumHeight(36)
+        scroll_layout.addWidget(self.n_spinbox)
         
         # 输出尺寸（仅万相2.5/2.6显示）
-        size_label = QLabel("输出尺寸:")
-        size_label.setStyleSheet("font-weight: bold;")
+        scroll_layout.addSpacing(8)
+        if FLUENT_AVAILABLE:
+            size_label = BodyLabel("输出尺寸")
+        else:
+            size_label = QLabel("输出尺寸:")
+            size_label.setStyleSheet("font-weight: bold; font-size: 12px;")
         self.size_label = size_label
-        group_layout.addWidget(size_label)
+        scroll_layout.addWidget(size_label)
         
         self.size_combo = QComboBox()
+        self.size_combo.setMinimumHeight(36)
         self.size_combo.addItem("默认（不指定）", "")
         self.size_combo.addItem("1:1 (1280×1280)", "1280*1280")
         self.size_combo.addItem("1:1 (1024×1024)", "1024*1024")
@@ -642,82 +697,114 @@ class ImageEditWidget(QWidget):
         self.size_combo.addItem("9:16 (720×1280)", "720*1280")
         self.size_combo.addItem("16:9 (1280×720)", "1280*720")
         self.size_combo.addItem("21:9 (1344×576)", "1344*576")
-        group_layout.addWidget(self.size_combo)
+        scroll_layout.addWidget(self.size_combo)
         
         # 默认隐藏尺寸选择（仅万相模型显示）
         self.size_label.hide()
         self.size_combo.hide()
         
         # 图文混合输出（仅万相2.6显示）
-        self.interleave_checkbox = QCheckBox("启用图文混合输出")
-        self.interleave_checkbox.setStyleSheet("""
-            QCheckBox {
-                font-size: 12px;
-                padding: 5px;
-            }
-        """)
-        self.interleave_checkbox.setToolTip("生成包含文字说明和图片的教程式内容")
-        self.interleave_checkbox.stateChanged.connect(self.on_interleave_changed)
-        group_layout.addWidget(self.interleave_checkbox)
+        scroll_layout.addSpacing(8)
+        interleave_layout = QHBoxLayout()
+        interleave_layout.setSpacing(12)
+        
+        if FLUENT_AVAILABLE:
+            interleave_label = BodyLabel("启用图文混合输出")
+            interleave_layout.addWidget(interleave_label, 1)
+            self.interleave_checkbox = SwitchButton()
+            self.interleave_checkbox.setChecked(False)
+            self.interleave_checkbox.checkedChanged.connect(self.on_interleave_changed)
+            interleave_layout.addWidget(self.interleave_checkbox)
+        else:
+            self.interleave_checkbox = QCheckBox("启用图文混合输出")
+            self.interleave_checkbox.setStyleSheet("""
+                QCheckBox {
+                    font-size: 12px;
+                    padding: 5px;
+                }
+            """)
+            self.interleave_checkbox.stateChanged.connect(self.on_interleave_changed)
+            interleave_layout.addWidget(self.interleave_checkbox)
+        
+        self.interleave_layout_widget = QWidget()
+        self.interleave_layout_widget.setLayout(interleave_layout)
+        self.interleave_layout_widget.setToolTip("生成包含文字说明和图片的教程式内容")
+        scroll_layout.addWidget(self.interleave_layout_widget)
         
         # 最大图片数量（仅图文混合模式显示）
-        max_images_layout = QHBoxLayout()
-        self.max_images_label = QLabel("最多生成图片数:")
-        self.max_images_label.setStyleSheet("font-weight: bold;")
-        max_images_layout.addWidget(self.max_images_label)
+        if FLUENT_AVAILABLE:
+            max_images_label = BodyLabel("最多生成图片数")
+        else:
+            max_images_label = QLabel("最多生成图片数:")
+            max_images_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        self.max_images_label = max_images_label
+        scroll_layout.addWidget(self.max_images_label)
         
-        self.max_images_spinbox = QSpinBox()
+        if FLUENT_AVAILABLE:
+            self.max_images_spinbox = SpinBox()
+        else:
+            self.max_images_spinbox = QSpinBox()
         self.max_images_spinbox.setMinimum(1)
         self.max_images_spinbox.setMaximum(5)
         self.max_images_spinbox.setValue(3)
         self.max_images_spinbox.setToolTip("实际生成数量可能少于设定值")
-        max_images_layout.addWidget(self.max_images_spinbox)
-        max_images_layout.addStretch()
-        
-        self.max_images_layout_widget = QWidget()
-        self.max_images_layout_widget.setLayout(max_images_layout)
-        group_layout.addWidget(self.max_images_layout_widget)
+        self.max_images_spinbox.setMinimumHeight(36)
+        scroll_layout.addWidget(self.max_images_spinbox)
         
         # 默认隐藏图文混合选项（仅万相2.6显示）
-        self.interleave_checkbox.hide()
-        self.max_images_layout_widget.hide()
+        self.interleave_layout_widget.hide()
+        self.max_images_label.hide()
+        self.max_images_spinbox.hide()
         
         # 生成按钮
-        self.generate_btn = QPushButton("开始编辑")
-        self.generate_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #007bff;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #0056b3;
-            }
-            QPushButton:disabled {
-                background-color: #ccc;
-            }
-        """)
+        scroll_layout.addSpacing(12)
+        if FLUENT_AVAILABLE:
+            self.generate_btn = PrimaryPushButton(FluentIcon.EDIT, "开始编辑")
+        else:
+            self.generate_btn = QPushButton("开始编辑")
+            self.generate_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-size: 14px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #0056b3;
+                }
+                QPushButton:disabled {
+                    background-color: #ccc;
+                }
+            """)
         self.generate_btn.clicked.connect(self.on_generate_clicked)
-        group_layout.addWidget(self.generate_btn)
+        self.generate_btn.setMinimumHeight(48)
+        scroll_layout.addWidget(self.generate_btn)
         
         # 状态标签
-        self.status_label = QLabel("")
-        self.status_label.setStyleSheet("""
-            QLabel {
-                color: #666;
-                font-size: 12px;
-                padding: 5px;
-            }
-        """)
+        if FLUENT_AVAILABLE:
+            self.status_label = BodyLabel("")
+            self.status_label.setStyleSheet("color: #888; font-size: 12px;")
+        else:
+            self.status_label = QLabel("")
+            self.status_label.setStyleSheet("""
+                QLabel {
+                    color: #666;
+                    font-size: 11px;
+                    padding: 8px;
+                    background: #f8f9fa;
+                    border-radius: 4px;
+                }
+            """)
+        self.status_label.setMinimumHeight(40)
         self.status_label.setWordWrap(True)
-        group_layout.addWidget(self.status_label)
+        scroll_layout.addWidget(self.status_label)
         
-        layout.addWidget(group_box)
-        layout.addStretch()
+        scroll_layout.addStretch()
+        scroll_area.setWidget(scroll_content)
+        layout.addWidget(scroll_area)
         
         # 初始化模型状态（触发一次on_model_changed）
         self.on_model_changed(0)
@@ -728,23 +815,29 @@ class ImageEditWidget(QWidget):
         """模式改变事件"""
         mode = self.mode_combo.itemData(index)
         if mode == "single":
-            self.mode_hint.setText("💡 单图编辑：选择1张图片进行编辑处理")
+            self.mode_hint.setText("单图编辑：选择1张图片进行编辑处理")
         else:
-            self.mode_hint.setText("💡 多图融合：选择2-3张图片进行融合处理")
+            self.mode_hint.setText("多图融合：选择2-3张图片进行融合处理")
     
     def on_interleave_changed(self, state):
         """图文混合模式切换"""
-        is_enabled = state == 2  # Qt.Checked
+        # 兼容 SwitchButton (bool) 和 QCheckBox (int)
+        if isinstance(state, bool):
+            is_enabled = state
+        else:
+            is_enabled = state == 2  # Qt.Checked
         
         if is_enabled:
             # 启用图文混合模式
-            self.max_images_layout_widget.show()
+            self.max_images_label.show()
+            self.max_images_spinbox.show()
             # 图文混合模式下n固定为1
             self.n_spinbox.setValue(1)
             self.n_spinbox.setEnabled(False)
         else:
             # 禁用图文混合模式
-            self.max_images_layout_widget.hide()
+            self.max_images_label.hide()
+            self.max_images_spinbox.hide()
             # 恢复n的设置
             self.n_spinbox.setEnabled(True)
     
@@ -755,16 +848,20 @@ class ImageEditWidget(QWidget):
         # 判断是否为万相模型
         is_wanxiang = model and (model.startswith('wan2.') or model == 'wan2.6-image')
         
+        # 获取图文混合状态（兼容 SwitchButton 和 QCheckBox）
+        interleave_checked = self.interleave_checkbox.isChecked() if hasattr(self.interleave_checkbox, 'isChecked') else False
+        
         if model == 'wan2.6-image':
-            self.model_desc_label.setText("🌟 万相2.6模型：最新模型，支持参考图生图、图文混合输出，异步处理")
+            self.model_desc_label.setText("万相2.6模型：最新模型，支持参考图生图、图文混合输出，异步处理")
             # 显示尺寸选择
             self.size_label.show()
             self.size_combo.show()
             # 显示图文混合选项
-            self.interleave_checkbox.show()
+            self.interleave_layout_widget.show()
             # 根据图文混合状态显示max_images
-            if self.interleave_checkbox.isChecked():
-                self.max_images_layout_widget.show()
+            if interleave_checked:
+                self.max_images_label.show()
+                self.max_images_spinbox.show()
             # 万相2.6不支持反向提示词
             self.neg_prompt_edit.setEnabled(False)
             self.neg_prompt_edit.setPlaceholderText("此模型不支持反向提示词")
@@ -774,8 +871,9 @@ class ImageEditWidget(QWidget):
             self.size_label.show()
             self.size_combo.show()
             # 隐藏图文混合选项（2.5不支持）
-            self.interleave_checkbox.hide()
-            self.max_images_layout_widget.hide()
+            self.interleave_layout_widget.hide()
+            self.max_images_label.hide()
+            self.max_images_spinbox.hide()
             # 万相2.5不支持反向提示词
             self.neg_prompt_edit.setEnabled(False)
             self.neg_prompt_edit.setPlaceholderText("此模型不支持反向提示词")
@@ -786,8 +884,9 @@ class ImageEditWidget(QWidget):
             self.size_label.hide()
             self.size_combo.hide()
             # 隐藏图文混合选项
-            self.interleave_checkbox.hide()
-            self.max_images_layout_widget.hide()
+            self.interleave_layout_widget.hide()
+            self.max_images_label.hide()
+            self.max_images_spinbox.hide()
             # 通义千问支持反向提示词
             self.neg_prompt_edit.setEnabled(True)
             self.neg_prompt_edit.setPlaceholderText("描述不希望出现的内容...")
@@ -849,8 +948,8 @@ class ImageEditWidget(QWidget):
         # 隐藏空状态
         self.empty_preview_label.hide()
         
-        # 显示图片缩略图（每行2张）
-        columns = 2
+        # 根据图片数量决定列数：1张图片时单列显示更大，多张时2列
+        columns = 1 if len(self.selected_images) == 1 else 2
         for i, image_path in enumerate(self.selected_images):
             row = i // columns
             col = i % columns
@@ -865,7 +964,7 @@ class ImageEditWidget(QWidget):
         card.setObjectName("previewCard")  # 设置对象名
         card.setStyleSheet("""
             QWidget#previewCard {
-                background: #f8f9fa;
+                background: transparent;
                 border: 2px solid #dee2e6;
                 border-radius: 6px;
             }
@@ -875,23 +974,20 @@ class ImageEditWidget(QWidget):
         """)
         
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(6)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(4)
         
         # 图片缩略图
         image_label = QLabel()
         pixmap = QPixmap(image_path)
         if not pixmap.isNull():
-            scaled_pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(500, 500, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             image_label.setPixmap(scaled_pixmap)
         image_label.setAlignment(Qt.AlignCenter)
-        image_label.setFixedHeight(160)  # 固定高度
         image_label.setStyleSheet("""
             QLabel {
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                padding: 4px;
+                background: transparent;
+                border: none;
             }
         """)
         layout.addWidget(image_label)
@@ -930,21 +1026,25 @@ class ImageEditWidget(QWidget):
         info_layout.addStretch()
         
         # 删除按钮
-        remove_btn = QPushButton("×")
-        remove_btn.setFixedSize(20, 20)
-        remove_btn.setStyleSheet("""
-            QPushButton {
-                background: #dc3545;
-                color: white;
-                border: none;
-                border-radius: 10px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: #c82333;
-            }
-        """)
+        if FLUENT_AVAILABLE:
+            remove_btn = TransparentToolButton(FluentIcon.CLOSE)
+            remove_btn.setFixedSize(24, 24)
+        else:
+            remove_btn = QPushButton("×")
+            remove_btn.setFixedSize(20, 20)
+            remove_btn.setStyleSheet("""
+                QPushButton {
+                    background: #dc3545;
+                    color: white;
+                    border: none;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background: #c82333;
+                }
+            """)
         remove_btn.clicked.connect(lambda: self.remove_image(image_path))
         info_layout.addWidget(remove_btn)
         
