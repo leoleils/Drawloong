@@ -10,7 +10,7 @@ REM ========================================
 echo.
 echo ========================================
 echo   烛龙绘影 Drawloong Windows 打包脚本
-echo   版本: v1.16.1
+echo   版本: v1.16.2
 echo ========================================
 echo.
 
@@ -123,7 +123,7 @@ if exist "LICENSE" copy /y LICENSE dist\Drawloong\ >nul 2>&1
 if exist "logo.png" copy /y logo.png dist\Drawloong\ >nul 2>&1
 
 REM 创建使用说明
-echo 烛龙绘影 Drawloong v1.16.1 > dist\Drawloong\使用说明.txt
+echo 烛龙绘影 Drawloong v1.16.2 > dist\Drawloong\使用说明.txt
 echo. >> dist\Drawloong\使用说明.txt
 echo 使用方法: >> dist\Drawloong\使用说明.txt
 echo   双击 Drawloong.exe 启动应用 >> dist\Drawloong\使用说明.txt

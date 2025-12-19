@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.16.1-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.16.2-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
@@ -194,6 +194,12 @@ build_windows.bat
 ---
 
 ## 更新日志
+
+### v1.16.2 (2025-12-19)
+- 欢迎页面全屏背景图优化
+- 修复 QFluentWidgets TabWidget 兼容性问题
+- Windows 打包脚本支持多镜像源
+- README 简化，去掉拟物化图标
 
 ### v1.16.1 (2025-12-19)
 - 全面 UI 优化 - 参考视频生成页面和首尾帧生成页面 Fluent 化
