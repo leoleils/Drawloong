@@ -62,7 +62,7 @@ class ConfigPanel(QWidget):
         },
         'wan2.2-i2v-plus': {
             'name': '万相2.2 专业版（无声视频）',
-            'resolutions': ['480P', '720P', '1080P'],
+            'resolutions': ['480P', '1080P'],  # 仅支持480P和1080P
             'durations': ['5秒'],
             'fps': 30,
             'audio': False,
