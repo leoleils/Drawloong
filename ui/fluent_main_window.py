@@ -22,11 +22,10 @@ try:
     )
     FLUENT_AVAILABLE = True
     
-    # macOS 临时解决方案：使用原生 QMainWindow 但保持 Fluent 样式
-    if sys.platform == 'darwin':
-        print("macOS 检测到，使用原生窗口以避免标题栏问题")
-        from PyQt5.QtWidgets import QMainWindow
-        FluentWindow = QMainWindow
+    # 统一解决方案：所有平台都使用原生 QMainWindow 以避免标题栏问题
+    print("使用原生窗口以确保标题栏按钮位置正确")
+    from PyQt5.QtWidgets import QMainWindow
+    FluentWindow = QMainWindow
         
 except ImportError:
     FLUENT_AVAILABLE = False
@@ -176,9 +175,8 @@ class FluentMainWindow(FluentWindow):
         self.resize(1200, 750)
         self.setMinimumSize(1000, 600)
         
-        # macOS 特定设置：现在使用原生窗口，红绿灯按钮应该在正确位置
-        if sys.platform == 'darwin':
-            print("macOS 使用原生窗口，标题栏按钮应该在正确位置")
+        # 使用原生窗口，标题栏按钮应该在正确位置
+        print("使用原生窗口，标题栏按钮应该在正确位置")
         
         # 窗口居中显示
         self.center_window()
@@ -188,31 +186,19 @@ class FluentMainWindow(FluentWindow):
         if os.path.exists(logo_path):
             self.setWindowIcon(QIcon(logo_path))
         
-        # 创建状态栏
-        if sys.platform == 'darwin':
-            # macOS 原生窗口：使用标准 QStatusBar，但保持 Fluent 样式
-            from PyQt5.QtWidgets import QStatusBar
-            self.status_bar = QStatusBar(self)
-            self.setStatusBar(self.status_bar)
-            
-            # 添加 Fluent 风格的状态信息显示
-            self.fluent_status_widget = FluentStatusBar(self)
-            self.status_bar.addPermanentWidget(self.fluent_status_widget, 1)
-        else:
-            # 其他平台：FluentWindow 使用 vBoxLayout
-            self.status_bar = FluentStatusBar(self)
-            if hasattr(self, 'vBoxLayout'):
-                self.vBoxLayout.addWidget(self.status_bar)
+        # 创建状态栏 - 统一使用原生状态栏包装 Fluent 组件
+        from PyQt5.QtWidgets import QStatusBar
+        self.status_bar = QStatusBar(self)
+        self.setStatusBar(self.status_bar)
         
-        # macOS 额外设置：确保标题栏正常显示
-        # 注意：现在使用原生窗口，不需要特殊处理
+        # 添加 Fluent 风格的状态信息显示
+        self.fluent_status_widget = FluentStatusBar(self)
+        self.status_bar.addPermanentWidget(self.fluent_status_widget, 1)
+    
     
     def _get_status_widget(self):
-        """获取状态栏组件（兼容 macOS 和其他平台）"""
-        if sys.platform == 'darwin':
-            return self.fluent_status_widget
-        else:
-            return self.status_bar
+        """获取状态栏组件（统一使用 fluent_status_widget）"""
+        return self.fluent_status_widget
     
     
     def init_interfaces(self):
@@ -369,13 +355,8 @@ class FluentMainWindow(FluentWindow):
     
     def init_navigation(self):
         """初始化导航栏"""
-        if not FLUENT_AVAILABLE or sys.platform == 'darwin':
-            # 在 macOS 上或没有 QFluentWidgets 时，创建简单的工具栏导航
-            self._create_toolbar_navigation()
-            return
-        
-        # 其他平台使用 FluentWindow 导航
-        self._create_fluent_navigation()
+        # 统一使用工具栏导航以确保跨平台一致性
+        self._create_toolbar_navigation()
     
     def _create_toolbar_navigation(self):
         """创建工具栏风格的导航（用于 macOS 或降级情况）"""
@@ -433,87 +414,6 @@ class FluentMainWindow(FluentWindow):
         
         # 连接堆叠窗口部件的切换信号
         self.stackedWidget.currentChanged.connect(self.on_interface_changed)
-    
-    def _create_fluent_navigation(self):
-        """创建 Fluent 风格导航（非 macOS 平台）"""
-        # 添加欢迎页面（首页）
-        self.addSubInterface(
-            self.welcome_interface,
-            FluentIcon.HOME,
-            "欢迎",
-            NavigationItemPosition.TOP
-        )
-        
-        # 添加首帧生视频导航项
-        self.addSubInterface(
-            self.first_frame_interface,
-            FluentIcon.VIDEO,
-            "首帧生视频",
-            NavigationItemPosition.TOP
-        )
-        
-        # 添加首尾帧生视频导航项
-        self.addSubInterface(
-            self.keyframe_interface,
-            FluentIcon.MOVIE,
-            "首尾帧生视频",
-            NavigationItemPosition.TOP
-        )
-        
-        # 添加文生图导航项
-        self.addSubInterface(
-            self.text_to_image_interface,
-            FluentIcon.PHOTO,
-            "文生图",
-            NavigationItemPosition.TOP
-        )
-        
-        # 添加图像编辑导航项
-        self.addSubInterface(
-            self.image_edit_interface,
-            FluentIcon.EDIT,
-            "图像编辑",
-            NavigationItemPosition.TOP
-        )
-        
-        # 添加参考生视频导航项
-        self.addSubInterface(
-            self.reference_video_interface,
-            FluentIcon.SYNC,
-            "参考生视频",
-            NavigationItemPosition.TOP
-        )
-        
-        # 在底部添加资源管理器导航项
-        self.addSubInterface(
-            QWidget(),  # 占位符
-            FluentIcon.FOLDER,
-            "资源管理器",
-            onClick=self.toggle_floating_explorer,
-            selectable=False,
-            position=NavigationItemPosition.BOTTOM
-        )
-        
-        # 在底部添加任务列表导航项
-        self.addSubInterface(
-            QWidget(),  # 占位符
-            FluentIcon.HISTORY,
-            "任务列表",
-            onClick=self.toggle_floating_task_list,
-            selectable=False,
-            position=NavigationItemPosition.BOTTOM
-        )
-        
-        # 在底部添加设置导航项
-        self.addSubInterface(
-            self.settings_interface,
-            FluentIcon.SETTING,
-            "设置",
-            NavigationItemPosition.BOTTOM
-        )
-        
-        # 更新导航项可见性
-        self._update_navigation_visibility()
     
     def _switch_to_interface(self, interface_name):
         """切换到指定界面（用于工具栏导航）"""
@@ -683,46 +583,6 @@ class FluentMainWindow(FluentWindow):
         x = (screen.width() - window_size.width()) // 2
         y = (screen.height() - window_size.height()) // 2
         self.move(x, y)
-    
-    def _apply_macos_native_titlebar(self):
-        """在 macOS 上强制使用原生标题栏"""
-        try:
-            print("应用 macOS 原生标题栏设置...")
-            
-            # 强制设置原生窗口标志
-            native_flags = (Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | 
-                           Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | 
-                           Qt.WindowCloseButtonHint)
-            
-            self.setWindowFlags(native_flags)
-            
-            # 确保使用原生窗口
-            self.setAttribute(Qt.WA_NativeWindow, True)
-            self.setAttribute(Qt.WA_DontCreateNativeAncestors, False)
-            
-            print("macOS 原生标题栏设置完成")
-            
-        except Exception as e:
-            print(f"设置原生标题栏时出错: {e}")
-    
-    def _fix_macos_titlebar(self):
-        """修复 macOS 上的标题栏按钮位置问题（备用方法）"""
-        if sys.platform == 'darwin' and FLUENT_AVAILABLE:
-            try:
-                print("执行备用标题栏修复...")
-                
-                # 如果仍然有自定义标题栏，尝试隐藏它
-                if hasattr(self, 'titleBar') and self.titleBar and self.titleBar.isVisible():
-                    print("隐藏自定义标题栏")
-                    self.titleBar.hide()
-                
-                # 重新应用原生标题栏
-                self._apply_macos_native_titlebar()
-                
-                print("备用标题栏修复完成")
-                
-            except Exception as e:
-                print(f"备用修复时出错: {e}")
     
     def apply_fluent_theme(self):
         """应用 Fluent 主题"""
