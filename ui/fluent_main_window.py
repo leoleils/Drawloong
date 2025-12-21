@@ -21,6 +21,13 @@ try:
         SubtitleLabel, setTheme, Theme, NavigationAvatarWidget
     )
     FLUENT_AVAILABLE = True
+    
+    # macOS 临时解决方案：使用原生 QMainWindow 但保持 Fluent 样式
+    if sys.platform == 'darwin':
+        print("macOS 检测到，使用原生窗口以避免标题栏问题")
+        from PyQt5.QtWidgets import QMainWindow
+        FluentWindow = QMainWindow
+        
 except ImportError:
     FLUENT_AVAILABLE = False
     from PyQt5.QtWidgets import QMainWindow as FluentWindow
@@ -157,16 +164,21 @@ class FluentMainWindow(FluentWindow):
         # 检查 API 密钥
         self.check_api_key()
     
+    def showEvent(self, event):
+        """窗口显示事件"""
+        super().showEvent(event)
+        # macOS 的标题栏修复已经在 __init__ 中处理了
+    
+    
     def setup_window(self):
         """设置窗口属性"""
         self.setWindowTitle("烛龙绘影 Drawloong")
         self.resize(1200, 750)
         self.setMinimumSize(1000, 600)
         
-        # macOS 特定设置：确保窗口控制按钮位置正确
+        # macOS 特定设置：现在使用原生窗口，红绿灯按钮应该在正确位置
         if sys.platform == 'darwin':
-            # 使用原生窗口装饰，确保红绿灯按钮在正确位置
-            self.setWindowFlags(self.windowFlags() | Qt.Window)
+            print("macOS 使用原生窗口，标题栏按钮应该在正确位置")
         
         # 窗口居中显示
         self.center_window()
@@ -176,12 +188,32 @@ class FluentMainWindow(FluentWindow):
         if os.path.exists(logo_path):
             self.setWindowIcon(QIcon(logo_path))
         
-        # 创建 Fluent 风格状态栏
-        self.status_bar = FluentStatusBar(self)
-        # 将状态栏添加到窗口底部
-        # FluentWindow 使用 vBoxLayout 作为主布局
-        if hasattr(self, 'vBoxLayout'):
-            self.vBoxLayout.addWidget(self.status_bar)
+        # 创建状态栏
+        if sys.platform == 'darwin':
+            # macOS 原生窗口：使用标准 QStatusBar，但保持 Fluent 样式
+            from PyQt5.QtWidgets import QStatusBar
+            self.status_bar = QStatusBar(self)
+            self.setStatusBar(self.status_bar)
+            
+            # 添加 Fluent 风格的状态信息显示
+            self.fluent_status_widget = FluentStatusBar(self)
+            self.status_bar.addPermanentWidget(self.fluent_status_widget, 1)
+        else:
+            # 其他平台：FluentWindow 使用 vBoxLayout
+            self.status_bar = FluentStatusBar(self)
+            if hasattr(self, 'vBoxLayout'):
+                self.vBoxLayout.addWidget(self.status_bar)
+        
+        # macOS 额外设置：确保标题栏正常显示
+        # 注意：现在使用原生窗口，不需要特殊处理
+    
+    def _get_status_widget(self):
+        """获取状态栏组件（兼容 macOS 和其他平台）"""
+        if sys.platform == 'darwin':
+            return self.fluent_status_widget
+        else:
+            return self.status_bar
+    
     
     def init_interfaces(self):
         """初始化各功能界面"""
@@ -337,9 +369,73 @@ class FluentMainWindow(FluentWindow):
     
     def init_navigation(self):
         """初始化导航栏"""
-        if not FLUENT_AVAILABLE:
+        if not FLUENT_AVAILABLE or sys.platform == 'darwin':
+            # 在 macOS 上或没有 QFluentWidgets 时，创建简单的工具栏导航
+            self._create_toolbar_navigation()
             return
         
+        # 其他平台使用 FluentWindow 导航
+        self._create_fluent_navigation()
+    
+    def _create_toolbar_navigation(self):
+        """创建工具栏风格的导航（用于 macOS 或降级情况）"""
+        from PyQt5.QtWidgets import QToolBar, QAction
+        
+        # 创建工具栏
+        self.nav_toolbar = QToolBar("导航", self)
+        self.addToolBar(self.nav_toolbar)
+        
+        # 创建堆叠窗口部件
+        if not hasattr(self, 'stackedWidget'):
+            from PyQt5.QtWidgets import QStackedWidget
+            self.stackedWidget = QStackedWidget()
+            self.setCentralWidget(self.stackedWidget)
+        
+        # 添加所有界面到堆叠窗口部件
+        self.stackedWidget.addWidget(self.welcome_interface)
+        self.stackedWidget.addWidget(self.first_frame_interface)
+        self.stackedWidget.addWidget(self.keyframe_interface)
+        self.stackedWidget.addWidget(self.text_to_image_interface)
+        self.stackedWidget.addWidget(self.image_edit_interface)
+        self.stackedWidget.addWidget(self.reference_video_interface)
+        
+        # 设置默认页面
+        self.stackedWidget.setCurrentWidget(self.welcome_interface)
+        
+        # 添加导航项
+        nav_items = [
+            ("欢迎", "welcome_interface"),
+            ("首帧生视频", "first_frame_interface"),
+            ("首尾帧生视频", "keyframe_interface"),
+            ("文生图", "text_to_image_interface"),
+            ("图像编辑", "image_edit_interface"),
+            ("参考生视频", "reference_video_interface"),
+        ]
+        
+        # 添加导航动作
+        for name, interface_name in nav_items:
+            action = QAction(name, self)
+            action.setData(interface_name)
+            action.triggered.connect(lambda checked, iface=interface_name: self._switch_to_interface(iface))
+            self.nav_toolbar.addAction(action)
+        
+        # 添加分隔符
+        self.nav_toolbar.addSeparator()
+        
+        # 添加资源管理器和任务列表按钮
+        explorer_action = QAction("资源管理器", self)
+        explorer_action.triggered.connect(self.toggle_floating_explorer)
+        self.nav_toolbar.addAction(explorer_action)
+        
+        task_action = QAction("任务列表", self)
+        task_action.triggered.connect(self.toggle_floating_task_list)
+        self.nav_toolbar.addAction(task_action)
+        
+        # 连接堆叠窗口部件的切换信号
+        self.stackedWidget.currentChanged.connect(self.on_interface_changed)
+    
+    def _create_fluent_navigation(self):
+        """创建 Fluent 风格导航（非 macOS 平台）"""
         # 添加欢迎页面（首页）
         self.addSubInterface(
             self.welcome_interface,
@@ -388,24 +484,21 @@ class FluentMainWindow(FluentWindow):
             NavigationItemPosition.TOP
         )
         
-        # 添加分隔线
-        self.navigationInterface.addSeparator()
-        
-        # 添加资源管理器按钮（全局可用）
-        self.navigationInterface.addItem(
-            routeKey='explorer',
-            icon=FluentIcon.FOLDER,
-            text='资源管理器',
+        # 在底部添加资源管理器导航项
+        self.addSubInterface(
+            QWidget(),  # 占位符
+            FluentIcon.FOLDER,
+            "资源管理器",
             onClick=self.toggle_floating_explorer,
             selectable=False,
             position=NavigationItemPosition.BOTTOM
         )
         
-        # 添加任务列表按钮（全局可用）
-        self.navigationInterface.addItem(
-            routeKey='taskList',
-            icon=FluentIcon.HISTORY,
-            text='任务列表',
+        # 在底部添加任务列表导航项
+        self.addSubInterface(
+            QWidget(),  # 占位符
+            FluentIcon.HISTORY,
+            "任务列表",
             onClick=self.toggle_floating_task_list,
             selectable=False,
             position=NavigationItemPosition.BOTTOM
@@ -419,25 +512,31 @@ class FluentMainWindow(FluentWindow):
             NavigationItemPosition.BOTTOM
         )
         
-        # 设置默认页面为欢迎页
-        self.stackedWidget.setCurrentWidget(self.welcome_interface)
+        # 更新导航项可见性
+        self._update_navigation_visibility()
+    
+    def _switch_to_interface(self, interface_name):
+        """切换到指定界面（用于工具栏导航）"""
+        interface_map = {
+            "welcome_interface": self.welcome_interface,
+            "first_frame_interface": self.first_frame_interface,
+            "keyframe_interface": self.keyframe_interface,
+            "text_to_image_interface": self.text_to_image_interface,
+            "image_edit_interface": self.image_edit_interface,
+            "reference_video_interface": self.reference_video_interface,
+        }
         
-        # 连接导航切换信号
-        self.stackedWidget.currentChanged.connect(self.on_interface_changed)
-        
-        # 使用样式表隐藏导航栏左上角的菜单按钮
-        # 这种方法比调用 setMenuButtonVisible 更安全，不会触发内部错误
-        try:
-            # 查找并隐藏菜单按钮
-            for child in self.navigationInterface.children():
-                # 菜单按钮通常是 NavigationToolButton 或类似的类
-                if child.__class__.__name__ in ['NavigationToolButton', 'ToolButton', 'QPushButton']:
-                    # 检查是否是顶部的按钮（通常是菜单按钮）
-                    if hasattr(child, 'geometry') and child.geometry().y() < 50:
-                        child.hide()
-        except Exception as e:
-            print(f"隐藏导航按钮时出错: {e}")
-        
+        if interface_name in interface_map:
+            interface = interface_map[interface_name]
+            if hasattr(self, 'stackedWidget'):
+                # 确保界面已添加到堆叠窗口部件
+                if self.stackedWidget.indexOf(interface) == -1:
+                    self.stackedWidget.addWidget(interface)
+                self.stackedWidget.setCurrentWidget(interface)
+                
+                # 调用界面切换回调
+                self.on_interface_changed(self.stackedWidget.currentIndex())
+    
         # 初始状态：隐藏功能导航项（未打开工程时）
         self._update_navigation_visibility()
     
@@ -585,6 +684,46 @@ class FluentMainWindow(FluentWindow):
         y = (screen.height() - window_size.height()) // 2
         self.move(x, y)
     
+    def _apply_macos_native_titlebar(self):
+        """在 macOS 上强制使用原生标题栏"""
+        try:
+            print("应用 macOS 原生标题栏设置...")
+            
+            # 强制设置原生窗口标志
+            native_flags = (Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | 
+                           Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | 
+                           Qt.WindowCloseButtonHint)
+            
+            self.setWindowFlags(native_flags)
+            
+            # 确保使用原生窗口
+            self.setAttribute(Qt.WA_NativeWindow, True)
+            self.setAttribute(Qt.WA_DontCreateNativeAncestors, False)
+            
+            print("macOS 原生标题栏设置完成")
+            
+        except Exception as e:
+            print(f"设置原生标题栏时出错: {e}")
+    
+    def _fix_macos_titlebar(self):
+        """修复 macOS 上的标题栏按钮位置问题（备用方法）"""
+        if sys.platform == 'darwin' and FLUENT_AVAILABLE:
+            try:
+                print("执行备用标题栏修复...")
+                
+                # 如果仍然有自定义标题栏，尝试隐藏它
+                if hasattr(self, 'titleBar') and self.titleBar and self.titleBar.isVisible():
+                    print("隐藏自定义标题栏")
+                    self.titleBar.hide()
+                
+                # 重新应用原生标题栏
+                self._apply_macos_native_titlebar()
+                
+                print("备用标题栏修复完成")
+                
+            except Exception as e:
+                print(f"备用修复时出错: {e}")
+    
     def apply_fluent_theme(self):
         """应用 Fluent 主题"""
         if THEME_AVAILABLE:
@@ -606,7 +745,7 @@ class FluentMainWindow(FluentWindow):
     def on_image_selected(self, image_path):
         """图片选择回调"""
         self.current_image_path = image_path
-        self.status_bar.showMessage(f"已选择图片: {os.path.basename(image_path)}", 5000)
+        self._get_status_widget().showMessage(f"已选择图片: {os.path.basename(image_path)}", 5000)
         MessageHelper.info(self, "图片已选择", f"已选择: {os.path.basename(image_path)}")
         self.config_panel.generate_btn.setEnabled(True)
     
@@ -642,7 +781,7 @@ class FluentMainWindow(FluentWindow):
         # 禁用生成按钮并更新文本
         self.config_panel.generate_btn.setEnabled(False)
         self.config_panel.generate_btn.setText("生成中...")
-        self.status_bar.setBusy(True, "正在提交任务...")
+        self._get_status_widget().setBusy(True, "正在提交任务...")
         MessageHelper.info(self, "任务提交", "正在提交任务...")
         
         try:
@@ -692,11 +831,11 @@ class FluentMainWindow(FluentWindow):
             if not self.floating_task_list.is_drawer_visible():
                 self.floating_task_list.show_drawer(self)
             
-            self.status_bar.setBusy(True, "任务已提交，正在生成视频...")
+            self._get_status_widget().setBusy(True, "任务已提交，正在生成视频...")
             MessageHelper.success(self, "任务已提交", "正在生成视频...")
             
         except Exception as e:
-            self.status_bar.setBusy(False, "任务提交失败")
+            self._get_status_widget().setBusy(False, "任务提交失败")
             MessageHelper.error(self, "错误", f"任务提交失败：{str(e)}")
             self.config_panel.generate_btn.setEnabled(True)
             self.config_panel.generate_btn.setText("生成视频")
@@ -710,23 +849,23 @@ class FluentMainWindow(FluentWindow):
                 self.config_panel.generate_btn.setText("生成视频")
                 
                 if task.is_success():
-                    self.status_bar.setBusy(False, "视频生成成功！")
+                    self._get_status_widget().setBusy(False, "视频生成成功！")
                     if task.output_path and os.path.exists(task.output_path):
                         self.video_viewer.load_video(task.output_path)
                         MessageHelper.success(self, "成功", "视频生成完成！已自动加载到播放器。")
                     else:
                         MessageHelper.success(self, "成功", "视频生成完成！")
                 else:
-                    self.status_bar.setBusy(False, "视频生成失败")
+                    self._get_status_widget().setBusy(False, "视频生成失败")
                     MessageHelper.warning(self, "失败", "视频生成失败，请查看任务列表了解详情。")
                 
                 self.current_generating_task_id = None
             else:
                 if task.is_success():
-                    self.status_bar.showMessage(f"任务 {task_id[:8]} 已完成", 5000)
+                    self._get_status_widget().showMessage(f"任务 {task_id[:8]} 已完成", 5000)
                     MessageHelper.info(self, "任务完成", f"任务 {task_id[:8]} 已完成")
                 else:
-                    self.status_bar.showMessage(f"任务 {task_id[:8]} 失败", 5000)
+                    self._get_status_widget().showMessage(f"任务 {task_id[:8]} 失败", 5000)
                     MessageHelper.warning(self, "任务失败", f"任务 {task_id[:8]} 失败")
     
     def open_settings(self):
@@ -741,11 +880,11 @@ class FluentMainWindow(FluentWindow):
         self.api_client = DashScopeClient()
         
         if settings.is_api_key_valid():
-            self.status_bar.showMessage("API 密钥已更新", 3000)
+            self._get_status_widget().showMessage("API 密钥已更新", 3000)
             MessageHelper.success(self, "成功", "API 密钥已更新")
             self.config_panel.generate_btn.setEnabled(True)
         else:
-            self.status_bar.showMessage("API 密钥无效", 5000)
+            self._get_status_widget().showMessage("API 密钥无效", 5000)
             MessageHelper.warning(self, "警告", "API 密钥无效")
             self.config_panel.generate_btn.setEnabled(False)
     
@@ -766,13 +905,13 @@ class FluentMainWindow(FluentWindow):
                 widget.repaint()
         
         # 更新状态栏主题
-        self.status_bar.updateTheme()
+        self._get_status_widget().updateTheme()
         # 更新浮动资源管理器主题
         self.floating_explorer.updateTheme()
         # 更新浮动任务列表主题
         self.floating_task_list.updateTheme()
         
-        self.status_bar.showMessage(f"主题已切换到 {theme_name}", 3000)
+        self._get_status_widget().showMessage(f"主题已切换到 {theme_name}", 3000)
         MessageHelper.success(self, "主题已更改", f"主题已成功切换到 {theme_name}！")
 
     
@@ -844,10 +983,10 @@ class FluentMainWindow(FluentWindow):
         try:
             project = self.project_manager.create_project(name, location, description)
             self.switch_to_project(project)
-            self.status_bar.showMessage(f"工程 '{name}' 创建成功", 3000)
+            self._get_status_widget().showMessage(f"工程 '{name}' 创建成功", 3000)
             MessageHelper.success(self, "成功", f"工程 '{name}' 已创建")
         except Exception as e:
-            self.status_bar.showMessage("创建工程失败", 5000)
+            self._get_status_widget().showMessage("创建工程失败", 5000)
             MessageHelper.error(self, "错误", f"创建工程失败：{str(e)}")
     
     def open_project(self):
@@ -862,10 +1001,10 @@ class FluentMainWindow(FluentWindow):
         try:
             project = self.project_manager.open_project(project_path)
             self.switch_to_project(project)
-            self.status_bar.showMessage(f"工程 '{project.name}' 已打开", 3000)
+            self._get_status_widget().showMessage(f"工程 '{project.name}' 已打开", 3000)
             MessageHelper.success(self, "成功", f"工程 '{project.name}' 已打开")
         except Exception as e:
-            self.status_bar.showMessage("打开工程失败", 5000)
+            self._get_status_widget().showMessage("打开工程失败", 5000)
             MessageHelper.error(self, "错误", f"打开工程失败：{str(e)}")
     
     def close_project(self):
@@ -874,7 +1013,7 @@ class FluentMainWindow(FluentWindow):
             if MessageHelper.confirm(self, "确认关闭", "确定要关闭当前工程吗？"):
                 self.project_manager.close_project()
                 self.switch_to_welcome_page()
-                self.status_bar.showMessage("已关闭工程", 3000)
+                self._get_status_widget().showMessage("已关闭工程", 3000)
                 MessageHelper.info(self, "提示", "已关闭工程")
     
     def switch_to_project(self, project):
@@ -951,7 +1090,7 @@ class FluentMainWindow(FluentWindow):
                 project = self.project_manager.get_current_project()
                 if file_path.startswith(project.inputs_folder):
                     self.upload_widget.load_image(file_path)
-                    self.status_bar.showMessage(f"已加载图片: {os.path.basename(file_path)}", 3000)
+                    self._get_status_widget().showMessage(f"已加载图片: {os.path.basename(file_path)}", 3000)
                     MessageHelper.info(self, "图片已加载", f"已加载: {os.path.basename(file_path)}")
         
         elif file_path.lower().endswith('.mp4'):
@@ -965,11 +1104,11 @@ class FluentMainWindow(FluentWindow):
                     else:
                         self.video_viewer.load_video(file_path)
                     
-                    self.status_bar.showMessage(f"正在播放: {os.path.basename(file_path)}", 3000)
+                    self._get_status_widget().showMessage(f"正在播放: {os.path.basename(file_path)}", 3000)
                     MessageHelper.info(self, "正在播放", f"正在播放: {os.path.basename(file_path)}")
                 else:
                     VideoPlayer.play(file_path, self)
-                    self.status_bar.showMessage(f"正在播放: {os.path.basename(file_path)}", 3000)
+                    self._get_status_widget().showMessage(f"正在播放: {os.path.basename(file_path)}", 3000)
             else:
                 VideoPlayer.play(file_path, self)
-                self.status_bar.showMessage(f"正在播放: {os.path.basename(file_path)}", 3000)
+                self._get_status_widget().showMessage(f"正在播放: {os.path.basename(file_path)}", 3000)
