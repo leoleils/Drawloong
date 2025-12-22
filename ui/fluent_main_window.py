@@ -492,16 +492,8 @@ class FluentMainWindow(FluentWindow):
     
     def create_menu_bar(self):
         """创建菜单栏"""
-        # FluentWindow 没有 menuBar() 方法，需要手动创建
-        if FLUENT_AVAILABLE:
-            # 创建菜单栏并添加到布局顶部
-            menubar = QMenuBar(self)
-            # 将菜单栏插入到 vBoxLayout 的最顶部
-            if hasattr(self, 'vBoxLayout'):
-                self.vBoxLayout.insertWidget(0, menubar)
-        else:
-            # 降级模式下使用 QMainWindow 的 menuBar
-            menubar = self.menuBar()
+        # 现在统一使用原生 QMainWindow，直接使用 menuBar() 方法
+        menubar = self.menuBar()
         
         # 文件菜单
         file_menu = menubar.addMenu('文件')
@@ -549,9 +541,44 @@ class FluentMainWindow(FluentWindow):
         explorer_action.triggered.connect(self.toggle_floating_explorer)
         view_menu.addAction(explorer_action)
         
+        # 任务列表
+        task_list_action = QAction('任务列表', self)
+        task_list_action.setShortcut('Ctrl+T')
+        task_list_action.triggered.connect(self.toggle_floating_task_list)
+        view_menu.addAction(task_list_action)
+        
+        view_menu.addSeparator()
+        
+        # 主题切换子菜单
+        theme_menu = view_menu.addMenu('主题')
+        
+        # 浅色主题
+        light_theme_action = QAction('浅色', self)
+        light_theme_action.triggered.connect(lambda: self.on_theme_changed('Light'))
+        theme_menu.addAction(light_theme_action)
+        
+        # 深色主题
+        dark_theme_action = QAction('深色', self)
+        dark_theme_action.triggered.connect(lambda: self.on_theme_changed('Dark'))
+        theme_menu.addAction(dark_theme_action)
+        
+        # 自动主题
+        auto_theme_action = QAction('跟随系统', self)
+        auto_theme_action.triggered.connect(lambda: self.on_theme_changed('Auto'))
+        theme_menu.addAction(auto_theme_action)
+        
         # 帮助菜单
         help_menu = menubar.addMenu('帮助')
         
+        # 用户指南
+        guide_action = QAction('用户指南', self)
+        guide_action.setShortcut('F1')
+        guide_action.triggered.connect(self.show_user_guide)
+        help_menu.addAction(guide_action)
+        
+        help_menu.addSeparator()
+        
+        # 关于
         about_action = QAction('关于', self)
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
@@ -829,6 +856,14 @@ class FluentMainWindow(FluentWindow):
         layout.addLayout(button_layout)
         
         dialog.exec_()
+    
+    def show_user_guide(self):
+        """显示用户指南"""
+        import webbrowser
+        # 这里可以链接到在线文档或打开本地帮助文件
+        MessageHelper.info(self, "用户指南", "用户指南功能正在开发中，请查看项目文档获取使用说明。")
+        # 可以添加打开在线文档的链接
+        # webbrowser.open("https://your-docs-url.com")
     
     # ==================== 工程管理相关方法 ====================
     
