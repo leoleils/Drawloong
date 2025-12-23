@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
 烛龙绘影 Drawloong Windows 打包配置
-版本: v1.16.0
+版本: v1.17.0
 """
 
 import os
