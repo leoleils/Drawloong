@@ -6,8 +6,8 @@
 
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 16, 0, 0),
-    prodvers=(1, 16, 0, 0),
+    filevers=(1, 17, 0, 0),
+    prodvers=(1, 17, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -23,12 +23,12 @@ VSVersionInfo(
           [
             StringStruct(u'CompanyName', u'Drawloong Team'),
             StringStruct(u'FileDescription', u'烛龙绘影 - AI视频生成工具'),
-            StringStruct(u'FileVersion', u'1.16.0.0'),
+            StringStruct(u'FileVersion', u'1.17.0.0'),
             StringStruct(u'InternalName', u'Drawloong'),
             StringStruct(u'LegalCopyright', u'Copyright (C) 2025 Drawloong Team'),
             StringStruct(u'OriginalFilename', u'Drawloong.exe'),
             StringStruct(u'ProductName', u'烛龙绘影 Drawloong'),
-            StringStruct(u'ProductVersion', u'1.16.0.0'),
+            StringStruct(u'ProductVersion', u'1.17.0.0'),
           ]
         )
       ]

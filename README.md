@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.16.2-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.17.0-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
@@ -194,6 +194,14 @@ build_windows.bat
 ---
 
 ## 更新日志
+
+### v1.17.0 (2025-12-23)
+- **新增 Z-Image Turbo 模型** - 极速文生图，轻量级快速生成
+- **万相2.6 批量生成支持** - 支持1-4张图片批量生成，大幅提升效率
+- **万相2.5/2.2 批量优化** - 使用单次API调用代替多次调用，减少75%请求次数
+- **通义千问模型限制修正** - 正确限制为单张生成，避免API错误
+- **智能错误处理系统** - 详细的错误分类和解决建议，提升用户体验
+- **动态UI调整** - 根据不同模型能力自动调整界面选项
 
 ### v1.16.2 (2025-12-19)
 - 欢迎页面全屏背景图优化

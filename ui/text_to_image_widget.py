@@ -33,7 +33,7 @@ class TextToImageWorker(QThread):
     error = pyqtSignal(str)  # error_message
     progress = pyqtSignal(str)  # status_message
     
-    def __init__(self, api_client, prompt, model, size, negative_prompt, prompt_extend, seed, output_folder):
+    def __init__(self, api_client, prompt, model, size, negative_prompt, prompt_extend, seed, output_folder, batch_count=1):
         super().__init__()
         self.api_client = api_client
         self.prompt = prompt
@@ -44,6 +44,7 @@ class TextToImageWorker(QThread):
         self.seed = seed  # 随机种子（None表示随机）
         self.output_folder = output_folder
         self.user_negative_prompt = negative_prompt  # 保存用户输入的反向提示词
+        self.batch_count = batch_count  # 批量生成数量
     
     def run(self):
         """执行文生图任务"""
@@ -53,35 +54,64 @@ class TextToImageWorker(QThread):
             import time
             from datetime import datetime
             
-            # 判断是否为万相2.6（使用同步接口）
+            # 判断使用哪种接口
             is_wan26 = self.model == 'wan2.6-t2i'
+            is_z_image = self.model == 'z-image-turbo'
             
-            if is_wan26:
-                # 万相2.6使用同步接口
+            if is_wan26 or is_z_image:
+                # 万相2.6和Z-Image使用同步接口
                 self.progress.emit("正在生成图片...")
                 result = self.submit_task_sync()
                 if not result:
                     return
                 
-                # 从同步响应中提取图片URL
-                image_url = result.get('url')
-                orig_prompt = result.get('orig_prompt', self.prompt)
-                actual_prompt = result.get('actual_prompt', self.prompt)
-                seed = result.get('seed', '')
-                
-                # 下载图片
-                self.progress.emit("正在下载图片...")
-                output_path = self.download_image(image_url)
-                if output_path:
-                    prompt_info = {
-                        'model': self.model,
-                        'size': self.size,
-                        'orig_prompt': orig_prompt,
-                        'actual_prompt': actual_prompt,
-                        'negative_prompt': self.user_negative_prompt,
-                        'seed': seed
-                    }
-                    self.finished.emit(image_url, output_path, prompt_info)
+                # 处理同步结果（支持单张和批量）
+                if 'results' in result:
+                    # 批量结果（万相2.6支持n>1）
+                    successful_results = result['results']
+                    successful_count = result['successful_count']
+                    failed_count = result['failed_count']
+                    
+                    self.progress.emit(f"正在下载图片... ({successful_count}张成功)")
+                    
+                    # 下载所有成功的图片
+                    for i, img_result in enumerate(successful_results):
+                        image_url = img_result['url']
+                        output_path = self.download_image(image_url, suffix=f"_{i+1}")
+                        if output_path:
+                            prompt_info = {
+                                'model': self.model,
+                                'size': self.size,
+                                'orig_prompt': img_result.get('orig_prompt', ''),
+                                'actual_prompt': img_result.get('actual_prompt', ''),
+                                'negative_prompt': self.user_negative_prompt,
+                                'seed': img_result.get('seed', '')
+                            }
+                            self.finished.emit(image_url, output_path, prompt_info)
+                    
+                    # 如果有失败的，发送警告
+                    if failed_count > 0:
+                        self.error.emit(f"批量生成完成，{successful_count}张成功，{failed_count}张失败")
+                else:
+                    # 单张结果（向后兼容）
+                    image_url = result.get('url')
+                    orig_prompt = result.get('orig_prompt', self.prompt)
+                    actual_prompt = result.get('actual_prompt', self.prompt)
+                    seed = result.get('seed', '')
+                    
+                    # 下载图片
+                    self.progress.emit("正在下载图片...")
+                    output_path = self.download_image(image_url)
+                    if output_path:
+                        prompt_info = {
+                            'model': self.model,
+                            'size': self.size,
+                            'orig_prompt': orig_prompt,
+                            'actual_prompt': actual_prompt,
+                            'negative_prompt': self.user_negative_prompt,
+                            'seed': seed
+                        }
+                        self.finished.emit(image_url, output_path, prompt_info)
             else:
                 # 其他模型使用异步接口
                 # 1. 提交异步任务
@@ -96,24 +126,53 @@ class TextToImageWorker(QThread):
                 if not result:
                     return
                 
-                image_url = result.get('url')
-                orig_prompt = result.get('orig_prompt', '')
-                actual_prompt = result.get('actual_prompt', '')
-                seed = result.get('seed', '')
-                
-                # 3. 下载图片
-                self.progress.emit("正在下载图片...")
-                output_path = self.download_image(image_url)
-                if output_path:
-                    prompt_info = {
-                        'model': self.model,
-                        'size': self.size,
-                        'orig_prompt': orig_prompt,
-                        'actual_prompt': actual_prompt,
-                        'negative_prompt': self.user_negative_prompt,
-                        'seed': seed
-                    }
-                    self.finished.emit(image_url, output_path, prompt_info)
+                # 处理多张图片的结果
+                if 'results' in result:
+                    # 批量结果
+                    successful_results = result['results']
+                    successful_count = result['successful_count']
+                    failed_count = result['failed_count']
+                    
+                    self.progress.emit(f"正在下载图片... ({successful_count}张成功)")
+                    
+                    # 下载所有成功的图片
+                    for i, img_result in enumerate(successful_results):
+                        image_url = img_result['url']
+                        output_path = self.download_image(image_url, suffix=f"_{i+1}")
+                        if output_path:
+                            prompt_info = {
+                                'model': self.model,
+                                'size': self.size,
+                                'orig_prompt': img_result.get('orig_prompt', ''),
+                                'actual_prompt': img_result.get('actual_prompt', ''),
+                                'negative_prompt': self.user_negative_prompt,
+                                'seed': img_result.get('seed', '')
+                            }
+                            self.finished.emit(image_url, output_path, prompt_info)
+                    
+                    # 如果有失败的，发送警告
+                    if failed_count > 0:
+                        self.error.emit(f"批量生成完成，{successful_count}张成功，{failed_count}张失败")
+                else:
+                    # 单张结果（向后兼容）
+                    image_url = result.get('url')
+                    orig_prompt = result.get('orig_prompt', '')
+                    actual_prompt = result.get('actual_prompt', '')
+                    seed = result.get('seed', '')
+                    
+                    # 3. 下载图片
+                    self.progress.emit("正在下载图片...")
+                    output_path = self.download_image(image_url)
+                    if output_path:
+                        prompt_info = {
+                            'model': self.model,
+                            'size': self.size,
+                            'orig_prompt': orig_prompt,
+                            'actual_prompt': actual_prompt,
+                            'negative_prompt': self.user_negative_prompt,
+                            'seed': seed
+                        }
+                        self.finished.emit(image_url, output_path, prompt_info)
             
         except Exception as e:
             self.error.emit(f"生成失败: {str(e)}")
@@ -122,6 +181,7 @@ class TextToImageWorker(QThread):
         """提交异步生成任务"""
         try:
             import requests
+            import json
             
             # 所有模型都使用text2image接口（包括万相2.6）
             url = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis'
@@ -135,7 +195,7 @@ class TextToImageWorker(QThread):
             is_wanxiang = self.model.startswith('wan')
             
             if is_wanxiang:
-                # 万相模型的API格式（包括2.6）
+                # 万相模型的API格式
                 data = {
                     "model": self.model,
                     "input": {
@@ -143,7 +203,7 @@ class TextToImageWorker(QThread):
                     },
                     "parameters": {
                         "size": self.size,
-                        "n": 1,
+                        "n": self.batch_count,  # 使用实际的批量数量
                         "prompt_extend": self.prompt_extend
                     }
                 }
@@ -164,7 +224,7 @@ class TextToImageWorker(QThread):
                     },
                     "parameters": {
                         "size": self.size,
-                        "n": 1,
+                        "n": self.batch_count,  # 使用实际的批量数量
                         "prompt_extend": self.prompt_extend,
                         "watermark": False
                     }
@@ -180,6 +240,10 @@ class TextToImageWorker(QThread):
             
             response = requests.post(url, headers=headers, json=data, timeout=30)
             result = response.json()
+            
+            print(f"[DEBUG] API响应 - 模型: {self.model}")
+            print(f"[DEBUG] 请求数据: {json.dumps(data, ensure_ascii=False, indent=2)}")
+            print(f"[DEBUG] 响应结果: {json.dumps(result, ensure_ascii=False, indent=2)}")
             
             # 检查错误
             if 'code' in result:
@@ -199,11 +263,15 @@ class TextToImageWorker(QThread):
             return None
     
     def submit_task_sync(self):
-        """提交同步生成任务（万相2.6专用）"""
+        """提交同步生成任务（万相2.6和Z-Image专用）"""
         try:
             import requests
             
-            # 万相2.6使用multimodal-generation同步接口
+            # 判断模型类型
+            is_wan26 = self.model == 'wan2.6-t2i'
+            is_z_image = self.model == 'z-image-turbo'
+            
+            # 使用multimodal-generation同步接口
             url = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation'
             headers = {
                 'Content-Type': 'application/json',
@@ -227,15 +295,24 @@ class TextToImageWorker(QThread):
                 },
                 "parameters": {
                     "size": self.size,
-                    "n": 1,  # 万相2.6目前只支持n=1
-                    "prompt_extend": self.prompt_extend,
-                    "watermark": False
+                    "prompt_extend": self.prompt_extend
                 }
             }
             
-            # 添加negative_prompt（如果有）
-            if self.negative_prompt:
-                data["parameters"]["negative_prompt"] = self.negative_prompt
+            # 根据模型类型设置不同参数
+            if is_z_image:
+                # Z-Image模型的特殊参数
+                data["parameters"]["watermark"] = False
+                # Z-Image不支持n参数，固定为1张
+                # Z-Image不支持反向提示词，不添加negative_prompt参数
+            else:
+                # 万相2.6的参数（支持批量生成）
+                data["parameters"]["n"] = self.batch_count  # 万相2.6现在支持n=1-4
+                data["parameters"]["watermark"] = False
+                
+                # 万相2.6支持反向提示词
+                if self.negative_prompt:
+                    data["parameters"]["negative_prompt"] = self.negative_prompt
             
             # 添加seed参数（如果指定）
             if self.seed is not None:
@@ -246,7 +323,7 @@ class TextToImageWorker(QThread):
             result = response.json()
             
             # 调试：打印完整响应以便排查
-            print(f"[DEBUG] 万相2.6 API响应: {result}")
+            print(f"[DEBUG] {self.model} API响应: {result}")
             
             # 检查错误
             if 'code' in result:
@@ -260,26 +337,44 @@ class TextToImageWorker(QThread):
             if 'output' in result and 'choices' in result['output']:
                 choices = result['output']['choices']
                 if choices and len(choices) > 0:
-                    first_choice = choices[0]
-                    if 'message' in first_choice and 'content' in first_choice['message']:
-                        content = first_choice['message']['content']
-                        if content and len(content) > 0:
-                            image_data = content[0]
-                            if 'image' in image_data:
-                                # 提取改写后的提示词（如果有）
-                                actual_prompt = image_data.get('actual_prompt', '')
-                                seed = image_data.get('seed', '')
-                                # 如果content中没有，尝试从output中获取
-                                if not actual_prompt:
-                                    actual_prompt = result['output'].get('actual_prompt', '')
-                                if not seed:
-                                    seed = result['output'].get('seed', '')
-                                return {
-                                    'url': image_data['image'],
-                                    'orig_prompt': self.prompt,
-                                    'actual_prompt': actual_prompt if actual_prompt else self.prompt,
-                                    'seed': str(seed) if seed else ''
-                                }
+                    # 处理万相2.6的批量响应格式
+                    successful_results = []
+                    
+                    for i, choice in enumerate(choices):
+                        if 'message' in choice and 'content' in choice['message']:
+                            content = choice['message']['content']
+                            if content and len(content) > 0:
+                                image_data = content[0]  # 每个choice的content中只有一张图片
+                                if 'image' in image_data:
+                                    # 提取改写后的提示词（如果有）
+                                    actual_prompt = image_data.get('actual_prompt', '')
+                                    seed = image_data.get('seed', '')
+                                    # 如果content中没有，尝试从output中获取
+                                    if not actual_prompt:
+                                        actual_prompt = result['output'].get('actual_prompt', '')
+                                    if not seed:
+                                        seed = result['output'].get('seed', '')
+                                    
+                                    successful_results.append({
+                                        'url': image_data['image'],
+                                        'orig_prompt': self.prompt,
+                                        'actual_prompt': actual_prompt if actual_prompt else self.prompt,
+                                        'seed': str(seed) if seed else '',
+                                        'index': i
+                                    })
+                    
+                    if successful_results:
+                        if len(successful_results) == 1:
+                            # 单张图片，保持向后兼容
+                            return successful_results[0]
+                        else:
+                            # 多张图片，返回批量结果格式
+                            return {
+                                'results': successful_results,
+                                'total_requested': len(choices),
+                                'successful_count': len(successful_results),
+                                'failed_count': len(choices) - len(successful_results)
+                            }
             
             self.error.emit("同步生成成功但未获取到图片URL")
             return None
@@ -319,18 +414,37 @@ class TextToImageWorker(QThread):
                         # 任务成功，获取图片URL和提示词
                         results = result['output'].get('results', [])
                         if results and len(results) > 0:
-                            result_data = results[0]
-                            image_url = result_data.get('url', '')
-                            if image_url:
-                                # 返回包含提示词信息的字典
+                            # 处理多张图片的结果
+                            successful_results = []
+                            failed_count = 0
+                            
+                            for i, result_data in enumerate(results):
+                                if 'url' in result_data:
+                                    # 成功的图片
+                                    successful_results.append({
+                                        'url': result_data.get('url', ''),
+                                        'orig_prompt': result_data.get('orig_prompt', ''),
+                                        'actual_prompt': result_data.get('actual_prompt', ''),
+                                        'seed': result_data.get('seed', ''),
+                                        'index': i
+                                    })
+                                else:
+                                    # 失败的图片
+                                    failed_count += 1
+                                    error_code = result_data.get('code', '')
+                                    error_msg = result_data.get('message', '未知错误')
+                                    print(f"[DEBUG] 图片 {i+1} 生成失败: [{error_code}] {error_msg}")
+                            
+                            if successful_results:
+                                # 返回所有成功的结果
                                 return {
-                                    'url': image_url,
-                                    'orig_prompt': result_data.get('orig_prompt', ''),
-                                    'actual_prompt': result_data.get('actual_prompt', ''),
-                                    'seed': result_data.get('seed', '')  # 添加seed
+                                    'results': successful_results,
+                                    'total_requested': len(results),
+                                    'successful_count': len(successful_results),
+                                    'failed_count': failed_count
                                 }
                             else:
-                                self.error.emit("任务成功但未获取到图片URL")
+                                self.error.emit("所有图片生成都失败了")
                                 return None
                         else:
                             self.error.emit("任务成功但结果为空")
@@ -374,19 +488,91 @@ class TextToImageWorker(QThread):
         error_tips = {
             'InternalError.Algo': {
                 'keyword': 'IP infringement',
-                'message': '提示词可能涉及知识产权侵权内容，请修改后重试。\n\n建议：\n- 避免使用特定品牌、明星、动漫角色名称\n- 使用通用描述代替具体名称\n- 描述风格、特征而非具体对象'
+                'title': '内容审核失败',
+                'message': '提示词可能涉及知识产权侵权内容，请修改后重试。',
+                'suggestions': [
+                    '避免使用特定品牌、明星、动漫角色名称',
+                    '使用通用描述代替具体名称',
+                    '描述风格、特征而非具体对象',
+                    '尝试更加抽象的表达方式'
+                ]
             },
             'InternalError.Timeout': {
                 'keyword': 'timeout',
-                'message': '生成超时，请稍后重试。\n\n可能原因：\n- 服务器负载较高\n- 网络不稳定\n- 提示词过于复杂'
+                'title': '生成超时',
+                'message': '图片生成时间过长，服务器超时。',
+                'suggestions': [
+                    '稍后重试，避开服务器高峰期',
+                    '简化提示词描述',
+                    '降低图片分辨率',
+                    '检查网络连接是否稳定'
+                ]
             },
             'InvalidParameter': {
                 'keyword': '',
-                'message': '参数错误，请检查配置。\n\n建议检查：\n- 图片尺寸是否符合模型约束\n- 提示词是否为空\n- 其他参数设置'
+                'title': '参数错误',
+                'message': '请求参数不符合API要求。',
+                'suggestions': [
+                    '检查图片尺寸是否符合模型约束',
+                    '确认提示词不为空且长度合适',
+                    '验证反向提示词长度不超过限制',
+                    '检查随机种子值是否在有效范围内'
+                ]
+            },
+            'InternalError.RateLimit': {
+                'keyword': 'rate limit',
+                'title': '请求频率限制',
+                'message': '请求过于频繁，触发了API限流。',
+                'suggestions': [
+                    '等待几分钟后重试',
+                    '减少并发请求数量',
+                    '检查账户配额是否充足',
+                    '考虑升级API套餐'
+                ]
+            },
+            'InternalError.QuotaExceeded': {
+                'keyword': 'quota',
+                'title': '配额不足',
+                'message': '账户配额已用完或余额不足。',
+                'suggestions': [
+                    '检查账户余额',
+                    '查看API配额使用情况',
+                    '充值或升级套餐',
+                    '联系客服了解配额详情'
+                ]
+            },
+            'InternalError.ModelUnavailable': {
+                'keyword': 'model',
+                'title': '模型不可用',
+                'message': '当前模型暂时不可用或维护中。',
+                'suggestions': [
+                    '尝试切换到其他模型',
+                    '稍后重试',
+                    '关注官方公告了解维护信息',
+                    '使用备用模型完成任务'
+                ]
+            },
+            'AuthenticationError': {
+                'keyword': 'auth',
+                'title': '认证失败',
+                'message': 'API密钥无效或已过期。',
+                'suggestions': [
+                    '检查API密钥是否正确',
+                    '确认密钥是否已过期',
+                    '重新生成API密钥',
+                    '检查账户状态是否正常'
+                ]
             },
             'InternalError': {
                 'keyword': '',
-                'message': '服务器内部错误，请稍后重试。\n\n如持续出现，请联系技术支持。'
+                'title': '服务器内部错误',
+                'message': '服务器遇到内部错误，无法完成请求。',
+                'suggestions': [
+                    '稍后重试',
+                    '如果问题持续，请联系技术支持',
+                    '尝试使用不同的模型',
+                    '检查提示词是否包含特殊字符'
+                ]
             }
         }
         
@@ -396,21 +582,40 @@ class TextToImageWorker(QThread):
                 # 检查是否需要匹配关键词
                 if tip_info['keyword']:
                     if tip_info['keyword'].lower() in error_msg.lower():
-                        return f"❌ {tip_info['message']}"
+                        return self.format_error_message(tip_info, error_code, error_msg)
                 else:
-                    return f"❌ {tip_info['message']}"
+                    return self.format_error_message(tip_info, error_code, error_msg)
         
         # 默认错误信息
-        return f"❌ 生成失败: [{error_code}]\n{error_msg}\n\n请检查提示词或稍后重试。"
+        return {
+            'title': '生成失败',
+            'message': f'[{error_code}] {error_msg}',
+            'suggestions': [
+                '检查提示词内容是否合适',
+                '稍后重试',
+                '尝试使用其他模型',
+                '如问题持续，请联系技术支持'
+            ]
+        }
     
-    def download_image(self, image_url):
+    def format_error_message(self, tip_info, error_code, error_msg):
+        """格式化错误信息"""
+        return {
+            'title': tip_info['title'],
+            'message': tip_info['message'],
+            'suggestions': tip_info['suggestions'],
+            'error_code': error_code,
+            'error_detail': error_msg
+        }
+    
+    def download_image(self, image_url, suffix=""):
         """下载生成的图片"""
         try:
             import requests
             from datetime import datetime
             
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"text2img_{timestamp}.png"
+            filename = f"text2img_{timestamp}{suffix}.png"
             output_path = os.path.join(self.output_folder, filename)
             
             img_response = requests.get(image_url, timeout=30)
@@ -775,6 +980,24 @@ class TextToImageWidget(QWidget):
     
     # 模型配置（包含分辨率约束）
     MODEL_CONFIG = {
+        'z-image-turbo': {
+            'name': '🚀 Z-Image Turbo（极速）',
+            'default_size': '1120*1440',
+            'description': '轻量模型，快速生图，总像素[512², 2048²]，PNG格式，不支持反向提示词',
+            'size_type': 'flexible',  # 灵活分辨率
+            'presets': [
+                '1:1 (1024*1024)',
+                '1:1 (1440*1440)',
+                '9:16 (1120*1440)',
+                '16:9 (1440*1120)',
+                '4:3 (1248*936)',
+                '3:4 (936*1248)',
+                '2:1 (1440*720)',
+                '1:2 (720*1440)',
+                '3:2 (1248*832)',
+                '2:3 (832*1248)'
+            ]
+        },
         'wan2.6-t2i': {
             'name': '🌟 万相2.6（最新）',
             'default_size': '1280*1280',
@@ -842,7 +1065,7 @@ class TextToImageWidget(QWidget):
         'qwen-image-plus': {
             'name': '通义千问Plus',
             'default_size': '1328*1328',
-            'description': '支持65种预设分辨率',
+            'description': '支持5种预设分辨率，n参数固定为1',
             'size_type': 'preset',  # 预设分辨率
             'presets': [
                 '1:1 (1328*1328)',
@@ -855,7 +1078,7 @@ class TextToImageWidget(QWidget):
         'qwen-image': {
             'name': '通义千问标准版',
             'default_size': '1328*1328',
-            'description': '支持65种预设分辨率',
+            'description': '支持5种预设分辨率，n参数固定为1',
             'size_type': 'preset',
             'presets': [
                 '1:1 (1328*1328)',
@@ -958,6 +1181,8 @@ class TextToImageWidget(QWidget):
         # 使用QComboBox以保证userData功能正常
         self.model_combo = QComboBox()
         self.model_combo.setMinimumHeight(36)
+        # Z-Image模型（极速）
+        self.model_combo.addItem("Z-Image Turbo（极速）", "z-image-turbo")
         # 万相模型（推荐）- 使用扁平图标风格
         self.model_combo.addItem("万相2.6（最新）", "wan2.6-t2i")
         self.model_combo.addItem("万相2.5 Preview", "wan2.5-t2i-preview")
@@ -996,9 +1221,6 @@ class TextToImageWidget(QWidget):
         self.size_combo = QComboBox()
         self.size_combo.setMinimumHeight(36)
         scroll_layout.addWidget(self.size_combo)
-        
-        # 初始化默认模型的尺寸选项
-        self.on_model_changed(0)
         
         # Seed设置
         scroll_layout.addSpacing(8)
@@ -1108,10 +1330,13 @@ class TextToImageWidget(QWidget):
         scroll_area.setWidget(scroll_content)
         layout.addWidget(scroll_area)
         
+        # 初始化默认模型的尺寸选项和批量限制（在所有UI组件创建完成后）
+        self.on_model_changed(0)
+        
         return widget
     
     def on_model_changed(self, index):
-        """模型改变事件 - 更新尺寸选项"""
+        """模型改变事件 - 更新尺寸选项和批量限制"""
         model_key = self.model_combo.itemData(index)
         if not model_key:
             return
@@ -1121,6 +1346,38 @@ class TextToImageWidget(QWidget):
         # 更新模型说明
         description = model_config.get('description', '')
         self.model_desc_label.setText(description)
+        
+        # 根据模型调整批量生成限制和功能支持
+        if model_key == 'z-image-turbo':
+            # z-image模型限制（不支持批量和反向提示词）
+            self.batch_spin.setMaximum(1)
+            self.batch_spin.setValue(1)
+            self.batch_spin.setEnabled(False)
+            self.batch_spin.setToolTip("Z-Image模型每次只能生成1张图片")
+            
+            # z-image模型不支持反向提示词
+            self.neg_prompt_edit.setEnabled(False)
+            self.neg_prompt_edit.setPlaceholderText("Z-Image模型不支持反向提示词")
+            self.neg_prompt_edit.clear()  # 清空现有内容
+        elif model_key.startswith('qwen-image'):
+            # 通义千问模型限制（n参数固定为1）
+            self.batch_spin.setMaximum(1)
+            self.batch_spin.setValue(1)
+            self.batch_spin.setEnabled(False)
+            self.batch_spin.setToolTip("通义千问模型n参数固定为1，不支持批量生成")
+            
+            # 通义千问支持反向提示词
+            self.neg_prompt_edit.setEnabled(True)
+            self.neg_prompt_edit.setPlaceholderText("描述不希望出现的内容...")
+        else:
+            # 万相模型支持批量生成和反向提示词
+            self.batch_spin.setMaximum(4)
+            self.batch_spin.setEnabled(True)
+            self.batch_spin.setToolTip("一次最多生成4张图片")
+            
+            # 启用反向提示词功能
+            self.neg_prompt_edit.setEnabled(True)
+            self.neg_prompt_edit.setPlaceholderText("描述不希望出现的内容...")
         
         # 保存当前选择的尺寸
         current_size = None
@@ -1180,17 +1437,19 @@ class TextToImageWidget(QWidget):
         
         # 禁用按钮
         self.generate_btn.setEnabled(False)
-        self.generate_btn.setText(f"生成中 (0/{batch_count})...")
+        self.generate_btn.setText(f"生成中...")
         
         # 初始化批量生成状态
         self.workers = []
         self.completed_count = 0
         self.total_count = batch_count
         
-        # 创建多个工作线程
-        for i in range(batch_count):
-            # 如果指定了seed，每个任务递增seed值
-            task_seed = base_seed + i if base_seed is not None else None
+        # 判断模型是否支持批量API
+        supports_batch_api = model.startswith('wan2.')
+        
+        if supports_batch_api and batch_count > 1:
+            # 使用单个API调用生成多张图片
+            print(f"[DEBUG] 使用批量API - 模型: {model}, 数量: {batch_count}")
             
             worker = TextToImageWorker(
                 self.api_client,
@@ -1199,22 +1458,54 @@ class TextToImageWidget(QWidget):
                 size,
                 negative_prompt,
                 prompt_extend,
-                task_seed,
-                output_folder
+                base_seed,
+                output_folder,
+                batch_count  # 传递批量数量
             )
             worker.finished.connect(self.on_generation_finished)
             worker.error.connect(self.on_generation_error)
             worker.progress.connect(self.on_generation_progress)
             self.workers.append(worker)
             worker.start()
-        
-        # 更新状态
-        self.status_label.setText(f"正在批量生成 {batch_count} 张图片...")
+            
+            # 更新状态
+            self.status_label.setText(f"正在生成 {batch_count} 张图片...")
+        else:
+            # 使用多个线程，每个生成1张图片
+            print(f"[DEBUG] 使用多线程模式 - 模型: {model}, 数量: {batch_count}")
+            
+            for i in range(batch_count):
+                # 如果指定了seed，每个任务递增seed值
+                task_seed = base_seed + i if base_seed is not None else None
+                
+                print(f"[DEBUG] 创建工作线程 {i+1}/{batch_count} - Seed: {task_seed}")
+                
+                worker = TextToImageWorker(
+                    self.api_client,
+                    prompt,
+                    model,
+                    size,
+                    negative_prompt,
+                    prompt_extend,
+                    task_seed,
+                    output_folder,
+                    1  # 每个线程生成1张
+                )
+                worker.finished.connect(self.on_generation_finished)
+                worker.error.connect(self.on_generation_error)
+                worker.progress.connect(self.on_generation_progress)
+                self.workers.append(worker)
+                worker.start()
+            
+            # 更新状态
+            self.status_label.setText(f"正在批量生成 {batch_count} 张图片...")
     
     def on_generation_finished(self, image_url, output_path, prompt_info):
         """生成完成"""
         # 批量任务计数
         self.completed_count += 1
+        
+        print(f"[DEBUG] 任务完成: {self.completed_count}/{self.total_count} - 文件: {output_path}")
         
         # 添加到画廊（带完整信息）
         self.gallery.add_image(
@@ -1252,12 +1543,28 @@ class TextToImageWidget(QWidget):
         # 批量任务计数(错误也算完成)
         self.completed_count += 1
         
+        print(f"[DEBUG] 任务失败: {self.completed_count}/{self.total_count} - 错误: {error_msg}")
+        
+        # 解析错误信息
+        if isinstance(error_msg, dict):
+            # 新格式的详细错误信息
+            error_info = error_msg
+            status_text = f"❌ {error_info['title']}: {error_info['message']}"
+        else:
+            # 兼容旧格式的简单错误信息
+            status_text = f"❌ {error_msg}"
+            error_info = {
+                'title': '生成失败',
+                'message': str(error_msg),
+                'suggestions': ['请稍后重试']
+            }
+        
         # 更新进度
         if self.total_count > 1:
             self.generate_btn.setText(f"生成中 ({self.completed_count}/{self.total_count})...")
             self.status_label.setText(f"⚠️ {self.completed_count}/{self.total_count} - 部分失败")
         else:
-            self.status_label.setText(f"❌ {error_msg}")
+            self.status_label.setText(status_text)
         
         # 全部完成
         if self.completed_count >= self.total_count:
@@ -1269,9 +1576,40 @@ class TextToImageWidget(QWidget):
             if hasattr(main_window, 'project_explorer'):
                 main_window.project_explorer.refresh()
         
-        # 只有单张或批量全部失败时显示错误弹窗
-        if self.total_count == 1:
-            QMessageBox.critical(self, "错误", error_msg)
+        # 显示详细错误弹窗
+        if self.total_count == 1 or self.completed_count >= self.total_count:
+            self.show_error_dialog(error_info)
+    
+    def show_error_dialog(self, error_info):
+        """显示详细的错误对话框"""
+        try:
+            from qfluentwidgets import MessageBox
+            
+            # 构建详细错误信息
+            detail_text = f"{error_info['message']}\n\n解决建议："
+            for i, suggestion in enumerate(error_info['suggestions'], 1):
+                detail_text += f"\n{i}. {suggestion}"
+            
+            if 'error_code' in error_info:
+                detail_text += f"\n\n错误代码: {error_info['error_code']}"
+            if 'error_detail' in error_info:
+                detail_text += f"\n技术详情: {error_info['error_detail']}"
+            
+            # 使用Fluent风格的消息框
+            msg_box = MessageBox(
+                error_info['title'],
+                detail_text,
+                self
+            )
+            msg_box.exec_()
+            
+        except ImportError:
+            # 如果没有qfluentwidgets，使用标准消息框
+            detail_text = f"{error_info['title']}\n\n{error_info['message']}\n\n解决建议："
+            for i, suggestion in enumerate(error_info['suggestions'], 1):
+                detail_text += f"\n{i}. {suggestion}"
+            
+            QMessageBox.critical(self, "生成失败", detail_text)
     
     def on_generation_progress(self, status_msg):
         """生成进度更新"""
