@@ -636,8 +636,8 @@ class ImageEditWidget(QWidget):
         self.model_combo.addItem("万相2.6（最新）", "wan2.6-image")
         # 万相2.5模型（异步）
         self.model_combo.addItem("万相2.5 Preview", "wan2.5-i2i-preview")
-        # 通义千问模型（同步）
-        self.model_combo.addItem("通义千问 Edit Plus", "qwen-image-edit-plus")
+        # 通义千问模型（同步）- 推荐新模型
+        self.model_combo.addItem("通义千问 Edit Plus（推荐）", "qwen-image-edit-plus")
         self.model_combo.addItem("通义千问 Edit Plus 2025", "qwen-image-edit-plus-2025-10-30")
         self.model_combo.currentIndexChanged.connect(self.on_model_changed)
         scroll_layout.addWidget(self.model_combo)
@@ -879,10 +879,16 @@ class ImageEditWidget(QWidget):
             self.neg_prompt_edit.setPlaceholderText("此模型不支持反向提示词")
         else:
             # 通义千问模型
-            self.model_desc_label.setText("通义千问模型：支持单图编辑和多图融合，同步处理")
-            # 隐藏尺寸选择
-            self.size_label.hide()
-            self.size_combo.hide()
+            if model == "qwen-image-edit-plus":
+                self.model_desc_label.setText("通义千问 Edit Plus（推荐）：支持单图编辑和多图融合，可输出1-6张图片，支持自定义分辨率，同步处理")
+                # 显示尺寸选择（新模型支持自定义分辨率）
+                self.size_label.show()
+                self.size_combo.show()
+            else:
+                self.model_desc_label.setText("通义千问模型：支持单图编辑和多图融合，同步处理")
+                # 隐藏尺寸选择
+                self.size_label.hide()
+                self.size_combo.hide()
             # 隐藏图文混合选项
             self.interleave_layout_widget.hide()
             self.max_images_label.hide()

@@ -177,10 +177,10 @@ class DashScopeClient:
             return self._submit_wanxiang_image_edit(images, prompt, model, n, prompt_extend, size, enable_interleave, max_images)
         else:
             # 其他模型使用同步API
-            return self._submit_qwen_image_edit(images, prompt, model, n, negative_prompt, prompt_extend)
+            return self._submit_qwen_image_edit(images, prompt, model, n, negative_prompt, prompt_extend, size)
     
     def _submit_qwen_image_edit(self, images: list, prompt: str, model: str,
-                               n: int, negative_prompt: str, prompt_extend: bool) -> Dict:
+                               n: int, negative_prompt: str, prompt_extend: bool, size: str = "") -> Dict:
         """提交通义千问图像编辑任务（同步）"""
         # 准备消息内容
         content = []
@@ -229,6 +229,10 @@ class DashScopeClient:
                 "watermark": False
             }
         }
+        
+        # 为qwen-image-edit-plus模型添加尺寸参数支持
+        if model == "qwen-image-edit-plus" and size:
+            payload["parameters"]["size"] = size
         
         # 发送请求
         response = requests.post(
