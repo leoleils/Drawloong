@@ -23,7 +23,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.17.0-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.17.1-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
@@ -198,6 +198,12 @@ build_windows.bat
 ---
 
 ## 更新日志
+
+### v1.17.1 (2025-12-24)
+
+- **新增通义千问 Edit Plus 推荐模型** - 支持1-6张图片输出，自定义分辨率
+- **图像编辑功能增强** - 智能UI适配，根据模型能力显示相关选项
+- **API优化** - 为qwen-image-edit-plus模型添加size参数支持
 
 ### v1.17.0 (2025-12-23)
 - **新增 Z-Image Turbo 模型** - 极速文生图，轻量级快速生成

@@ -23,7 +23,7 @@
     <img src="https://img.shields.io/badge/PyQt5-5.15+-orange.svg" alt="PyQt5 5.15+">
   </a>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.17.0-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.17.1-brightgreen.svg" alt="Version">
 </p>
 
 <p align="center">
@@ -198,6 +198,12 @@ This project is licensed under the **GNU General Public License v3.0**.
 ---
 
 ## Changelog
+
+### v1.17.1 (2025-12-24)
+
+- **New Qwen Edit Plus Recommended Model** - Support 1-6 image output with custom resolutions
+- **Enhanced Image Editing** - Smart UI adaptation based on model capabilities
+- **API Optimization** - Added size parameter support for qwen-image-edit-plus model
 
 ### v1.17.0 (2025-12-23)
 

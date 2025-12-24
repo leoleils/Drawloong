@@ -578,7 +578,7 @@ class MainWindow(QMainWindow):
         # 添加信息
         info_label = QLabel(
             "<h2>烛龙绘影 Drawloong</h2>"
-            "<p><b>版本:</b> 1.0.0</p>"
+            "<p><b>版本:</b> 1.17.1</p>"
             "<p>基于 PyQt5 的桌面客户端应用</p>"
             "<p>调用阿里云 DashScope API 实现图片转视频功能</p>"
             "<p><a href='https://dashscope.console.aliyun.com/'>获取 API 密钥</a></p>"

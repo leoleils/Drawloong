@@ -90,8 +90,8 @@ app = BUNDLE(
         'CFBundleName': 'Drawloong',
         'CFBundleDisplayName': '烛龙绘影 Drawloong',
         'CFBundleGetInfoString': "烛龙绘影 - AI图像视频生成应用",
-        'CFBundleVersion': "1.17.0",
-        'CFBundleShortVersionString': "1.17.0",
+        'CFBundleVersion': "1.17.1",
+        'CFBundleShortVersionString': "1.17.1",
         'NSHighResolutionCapable': 'True',
         # 解决 App Translocation 问题
         'LSUIElement': False,
