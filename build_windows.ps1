@@ -207,11 +207,16 @@ $readmeContent | Out-File -FilePath "$distPath\使用说明.txt" -Encoding UTF8
 
 # 创建.env示例
 $envContent = @"
-# 烛龙绘影配置文件
-# 复制此文件为 .env 并填入您的API密钥
+# 烛龙绘影配置文件（已弃用）
+# 从 v1.17.1 开始，推荐使用应用内"设置"界面配置 API 密钥
 
-# DashScope API 密钥
-DASHSCOPE_API_KEY=your_api_key_here
+# DashScope API 密钥（已弃用，请使用应用内设置）
+# DASHSCOPE_API_KEY=your_api_key_here
+
+# 注意：
+# 1. 推荐在应用的"设置"界面配置 API 密钥，更安全便捷
+# 2. 系统配置使用加密存储，比文件配置更安全
+# 3. 如果此文件中有API密钥，应用启动时会自动迁移到系统配置
 "@
 $envContent | Out-File -FilePath "$distPath\.env.example" -Encoding UTF8
 

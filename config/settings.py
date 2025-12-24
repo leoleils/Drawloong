@@ -8,7 +8,6 @@
 import os
 import json
 from PyQt5.QtCore import QSettings
-from dotenv import load_dotenv
 
 
 class Settings:
@@ -19,42 +18,57 @@ class Settings:
         # 使用 QSettings 存储用户配置
         self.qsettings = QSettings('WanX', 'ImageToVideo')
         
-        # 加载环境变量（作为备用）
-        load_dotenv()
-        
         # 基础数据目录: 放在用户目录下,避免打包后无权限
         home_dir = os.path.expanduser("~")
         app_data_dir = os.path.join(home_dir, ".drawloong")
         os.makedirs(app_data_dir, exist_ok=True)
         
-        # API 配置 - 优先从 QSettings 读取，其次从环境变量
-        self.DASHSCOPE_API_KEY = self.qsettings.value(
-            'api_key', 
-            os.environ.get('DASHSCOPE_API_KEY', '')
-        )
+        # API 配置 - 只从 QSettings 读取
+        self.DASHSCOPE_API_KEY = self.qsettings.value('api_key', '')
+        
+        # 如果QSettings中没有API密钥，尝试从.env文件迁移
+        if not self.DASHSCOPE_API_KEY:
+            self._migrate_from_env_file()
+        
         self.DASHSCOPE_BASE_URL = 'https://dashscope.aliyuncs.com/api/v1'
         
-        # 文件路径配置(默认放在用户数据目录下,也可通过环境变量覆盖)
-        self.UPLOAD_FOLDER = os.environ.get(
-            'UPLOAD_FOLDER',
-            os.path.join(app_data_dir, 'uploads')
-        )
-        self.OUTPUT_FOLDER = os.environ.get(
-            'OUTPUT_FOLDER',
-            os.path.join(app_data_dir, 'downloads')
-        )
-        self.TASKS_FILE = os.environ.get(
-            'TASKS_FILE',
-            os.path.join(app_data_dir, 'tasks.json')
-        )
+        # 文件路径配置(默认放在用户数据目录下)
+        self.UPLOAD_FOLDER = os.path.join(app_data_dir, 'uploads')
+        self.OUTPUT_FOLDER = os.path.join(app_data_dir, 'downloads')
+        self.TASKS_FILE = os.path.join(app_data_dir, 'tasks.json')
         
         # 文件限制
         self.ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-        self.MAX_FILE_SIZE = int(os.environ.get('MAX_FILE_SIZE', 10 * 1024 * 1024))
+        self.MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
         
         # 确保目录存在
         os.makedirs(self.UPLOAD_FOLDER, exist_ok=True)
         os.makedirs(self.OUTPUT_FOLDER, exist_ok=True)
+    
+    def _migrate_from_env_file(self):
+        """从.env文件迁移API密钥到QSettings"""
+        try:
+            # 尝试读取.env文件
+            env_file = '.env'
+            if os.path.exists(env_file):
+                with open(env_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith('DASHSCOPE_API_KEY='):
+                            api_key = line.split('=', 1)[1].strip()
+                            # 移除引号（如果有）
+                            if api_key.startswith('"') and api_key.endswith('"'):
+                                api_key = api_key[1:-1]
+                            elif api_key.startswith("'") and api_key.endswith("'"):
+                                api_key = api_key[1:-1]
+                            
+                            # 验证API密钥格式
+                            if api_key and api_key != 'your_api_key_here' and api_key != 'your_api_key':
+                                self.set_api_key(api_key)
+                                print(f"已从.env文件迁移API密钥到系统配置")
+                                break
+        except Exception as e:
+            print(f"迁移.env文件时出错: {e}")
     
     def set_api_key(self, api_key: str):
         """设置 API 密钥"""
